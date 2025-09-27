@@ -119,15 +119,15 @@ function render(level) {
     renderBoard(level);
     renderPieces(level);
     if (selectedPiece) {
+        console.log("Rendering highlights for", selectedPiece);
         highlightValidMoves(selectedPiece);
     }
 }
 
-let moveCount = 0; // Initialize move counter
-
 // Update the move count display
 function updateMoveCount() {
-    infoContainer.innerHTML = `Moves: ${moveCount} / Par: ${level1.par}`;
+    infoContainer.innerHTML = `Moves: ${moveHistory.length} / Par: ${level1.par}`;
+    restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
 }
 
 // Function to check if the level is cleared
@@ -140,13 +140,15 @@ function isLevelCleared(level) {
 function updateLevelClearedMessage() {
     if (level1.isCleared()) {
         levelClearedMessage.style.display = "block"; // Show the message
+        nextLevelButton.style.display = "block"; // Show the "Next Level" button
+        nextLevelButton.disabled = false; // Enable the "Next Level" button
     } else {
         levelClearedMessage.style.display = "none"; // Hide the message
+        nextLevelButton.style.display = "none"; // Hide the "Next Level" button
     }
 }
 
 function loadLevel(levelData) {
-    moveCount = 0; // Reset move count when loading a new level
     level1 = new Level(levelData); // Create a new Level instance
     updateMoveCount();
     render(level1);
@@ -353,26 +355,24 @@ document.getElementById("loadLevelButton").addEventListener("click", () => {
 });
 */
 
-let moveHistory = []; // Store the history of moves
+let moveHistory = []; // Store the history of moves, including grid and pieces
 
 // Function to undo the last move
 function undoLastMove() {
     if (moveHistory.length === 0) return;
 
     const lastMove = moveHistory.pop();
-    const { piece, previousX, previousY, previousGrid } = lastMove;
+    const { piece, previousX, previousY, grid, pieces } = lastMove;
 
-    // Restore the piece's position
-    piece.x = previousX;
-    piece.y = previousY;
+    // Restore the grid and pieces
+    level1.grid = grid.map(row => [...row]); // Deep copy of the grid
+    level1.pieces = pieces.map(p => ({ ...p })); // Deep copy of all pieces
 
-    // Restore the grid state
-    level1.grid = previousGrid;
+    // Update selectedPiece to match the restored piece on the board
+    selectedPiece = level1.getPieceAt(previousX, previousY);
 
-    moveCount--; // Decrement the move count
     updateMoveCount(); // Update the display
-    renderBoard(level1);
-    renderPieces(level1);
+    render(level1); // Render the restored state
     updateLevelClearedMessage(); // Check if the level is cleared
 
     // Disable the undo button if no moves are left
@@ -444,7 +444,6 @@ function handlePieceMove(piece, targetX, targetY) {
     animatePieceMove(piece, targetX, targetY, () => {
         piece.x = targetX;
         piece.y = targetY;
-        moveCount++;
         updateMoveCount();
         render(level1);
         updateLevelClearedMessage();
@@ -456,10 +455,57 @@ function saveMoveHistory(piece, targetX, targetY) {
         piece,
         previousX: piece.x,
         previousY: piece.y,
-        previousGrid: level1.grid.map(row => [...row]), // Deep copy of grid
+        grid: level1.grid.map(row => [...row]), // Deep copy of the grid
+        pieces: level1.pieces.map(p => ({ ...p })) // Deep copy of all pieces
     });
     undoButton.disabled = false; // Enable the undo button
+    updateMoveCount(); // Update the move count display
 }
 
+const restartButton = document.getElementById("restartButton");
+const nextLevelButton = document.getElementById("nextLevelButton");
+
+function restartLevel() {
+    if (moveHistory.length > 0) {
+        const firstState = moveHistory[0]; // Get the initial state
+        level1.grid = firstState.grid.map(row => [...row]); // Restore the grid
+        level1.pieces = firstState.pieces.map(p => ({ ...p })); // Restore the pieces
+    }
+    moveHistory = []; // Clear the undo list
+    undoButton.disabled = true; // Disable the undo button
+    selectedPiece = null; // Deselect any selected piece
+    updateMoveCount(); // Update the move count display
+    render(level1); // Render the restored state
+}
+
+function loadNextLevel() {
+    // Example: Load a new level (replace with actual logic for next levels)
+    const nextLevel = {
+        width: 8,
+        height: 8,
+        par: 10,
+        grid: [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 1, 1, 1, 1, 1, 1, 1],
+            [0, 1, 1, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 1, 1],
+            [0, 1, 1, 1, 1, 0, 1, 1],
+            [0, 0, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 1, 0, 0, 0, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1]
+        ],
+        pieces: [
+            { type: "rook", x: 0, y: 0 },
+            { type: "bishop", x: 3, y: 3 },
+            { type: "knight", x: 5, y: 5 }
+        ]
+    };
+    nextLevelButton.style.display = "none"; // Hide the "Next Level" button
+    loadLevel(nextLevel);
+}
+
+// Attach event listeners to the buttons
+restartButton.addEventListener("click", restartLevel);
+nextLevelButton.addEventListener("click", loadNextLevel);
 // Attach the undo button click event
 undoButton.addEventListener("click", undoLastMove);

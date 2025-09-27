@@ -55,8 +55,13 @@
             margin-bottom: 10px;
             font-size: 18px;
         }
-        #undoButton {
+        #undoButton, #restartButton {
             display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+        }
+        #nextLevelButton {
+            display: none; /* Initially hidden */
             margin: 10px auto;
             padding: 10px 20px;
         }
@@ -83,8 +88,10 @@
 
     <div id="infoContainer">Moves: 0 / Par: 0</div>
     <button id="undoButton" disabled>Undo</button>
+    <button id="restartButton">Restart</button>
 
     <canvas id="chessBoard"></canvas>
+    <button id="nextLevelButton">Next Level</button>
     <div id="levelClearedMessage">Level Cleared!</div>
 
     <script src="game.js"></script>
