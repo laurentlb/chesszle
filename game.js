@@ -59,6 +59,7 @@ let level1 = new Level({
     ]
 });
 
+let selectedPiece = null; // Currently selected piece
 
 // Preload images for all piece types
 function preloadImages() {
@@ -73,12 +74,15 @@ function preloadImages() {
 
 const pieceImages = preloadImages();
 
-function renderBoard(level) {
-    const COLORS = {
-        0: "#75481dff",
-        1: "#c3c98dff"
-    };
+// Preload images for board squares
+const squareImages = {
+    dark: new Image(),
+    light: new Image()
+};
+squareImages.dark.src = "img/square_dark.png";
+squareImages.light.src = "img/square_light.png";
 
+function renderBoard(level) {
     const { width, height, grid } = level;
     canvas.width = width * CELL_SIZE;
     canvas.height = height * CELL_SIZE;
@@ -86,14 +90,14 @@ function renderBoard(level) {
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const value = grid[y][x];
+            const squareImage = (x + y) % 2 === 0 ? squareImages.light : squareImages.dark;
+
             if (value === -1) {
                 // Draw wall
                 ctx.drawImage(pieceImages["wall"], x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             } else {
-                // Draw regular square
-                ctx.fillStyle = COLORS[value];
-                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                // Draw square using the appropriate image
+                ctx.drawImage(squareImage, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             }
         }
     }
@@ -111,6 +115,14 @@ function renderPieces(level) {
     pieces.forEach(piece => {
         drawPiece(piece, piece.x, piece.y);
     });
+}
+
+function render(level) {
+    renderBoard(level);
+    renderPieces(level);
+    if (selectedPiece) {
+        highlightValidMoves(selectedPiece);
+    }
 }
 
 let moveCount = 0; // Initialize move counter
@@ -139,8 +151,7 @@ function loadLevel(levelData) {
     moveCount = 0; // Reset move count when loading a new level
     level1 = new Level(levelData); // Create a new Level instance
     updateMoveCount();
-    renderBoard(level1);
-    renderPieces(level1);
+    render(level1);
     updateLevelClearedMessage();
 }
 
@@ -184,6 +195,12 @@ function isValidMove(piece, targetX, targetY) {
     if (targetX < 0 || targetX >= level1.width || targetY < 0 || targetY >= level1.height) {
         return false; // Out of bounds
     }
+
+    // Check if the target square is a wall or occupied by another piece
+    if (level1.grid[targetY][targetX] === -1 || level1.pieces.some(p => p.x === targetX && p.y === targetY)) {
+        return false;
+    }
+
     const dx = Math.abs(targetX - piece.x);
     const dy = Math.abs(targetY - piece.y);
 
@@ -208,6 +225,7 @@ function isValidMove(piece, targetX, targetY) {
     }
 
     // Get the squares visited during the move
+    console.log("Checking path for piece:", piece, "to", targetX, targetY);
     const visitedSquares = getVisitedSquares(piece, targetX, targetY);
 
     // Check if any visited square is a wall or occupied by another piece
@@ -215,11 +233,6 @@ function isValidMove(piece, targetX, targetY) {
         if (level1.grid[y][x] === -1 || level1.pieces.some(p => p.x === x && p.y === y)) {
             return false;
         }
-    }
-
-    // Check if the target square is a wall or occupied by another piece
-    if (level1.grid[targetY][targetX] === -1 || level1.pieces.some(p => p.x === targetX && p.y === targetY)) {
-        return false;
     }
 
     return true;
@@ -377,7 +390,12 @@ canvas.addEventListener("click", (event) => {
 
     const pieceOnSquare = level1.getPieceAt(x, y);
     if (pieceOnSquare) {
-        handlePieceSelection(pieceOnSquare);
+        if (selectedPiece === pieceOnSquare) {
+            selectedPiece = null; // Deselect if the same piece is clicked
+        } else {
+            selectedPiece = pieceOnSquare;
+        }
+        render(level1);
     } else if (selectedPiece) {
         handlePieceMove(selectedPiece, x, y);
     }
@@ -391,10 +409,30 @@ function getClickCoordinates(event) {
     };
 }
 
-function handlePieceSelection(piece) {
-    selectedPiece = piece;
+function highlightValidMoves(piece) {
+    const validMoves = [];
+    for (let y = 0; y < level1.height; y++) {
+        for (let x = 0; x < level1.width; x++) {
+            if (isValidMove(piece, x, y)) {
+                validMoves.push({ x, y });
+            }
+        }
+    }
+
+    // Draw small circles to indicate valid moves
+    validMoves.forEach(({ x, y }) => {
+        const centerX = x * CELL_SIZE + CELL_SIZE / 2;
+        const centerY = y * CELL_SIZE + CELL_SIZE / 2;
+        const radius = CELL_SIZE / 6;
+
+        ctx.fillStyle = "rgba(54, 105, 87, 0.8)"; // Semi-transparent green
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+    });
 }
 
+// Modify handlePieceMove to clear highlights after moving
 function handlePieceMove(piece, targetX, targetY) {
     if (!isValidMove(piece, targetX, targetY)) return;
 
@@ -405,8 +443,7 @@ function handlePieceMove(piece, targetX, targetY) {
         piece.y = targetY;
         moveCount++;
         updateMoveCount();
-        renderBoard(level1);
-        renderPieces(level1);
+        render(level1);
         updateLevelClearedMessage();
     });
 }
