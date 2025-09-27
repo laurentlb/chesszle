@@ -1,41 +1,3 @@
-const COLORS1 = { // default RGB color scheme
-  0: "#000000", // none -> white
-  1: "#0000ff", // blue
-  2: "#00ff00", // green
-  3: "#00ffff", // green + blue = cyan
-  4: "#ff0000", // red
-  5: "#ff00ff", // red + blue = magenta
-  6: "#ffff00", // red + green = yellow
-  7: "#ffffff"  // red + green + blue = white
-};
-
-const COLORS2 = { // CMY color scheme
-  0: "#ffffff", // none -> white
-  1: "#00ffff", // cyan
-  2: "#ff00ff", // magenta
-  3: "#0000ff", // cyan + magenta = blue
-  4: "#ffff00", // yellow
-  5: "#00ff00", // cyan + yellow = green
-  6: "#ff0000", // magenta + yellow = red
-  7: "#000000"  // cyan + magenta + yellow = black
-};
-
-const COLORS3 = {
-  0: "#ffffff", // white
-  1: "#ff0000", // red
-  2: "#ffff00", // yellow
-  4: "#0000ff", // blue
-  3: "#ff8000", // orange (R+Y)
-  5: "#800080", // purple (R+B)
-  6: "#008000", // green (Y+B)
-  7: "#000000", // black (R+Y+B)
-};
-
-const COLORS_BINARY = {
-    0: "#75481dff",
-    1: "#c3c98dff"
-};
-
 const canvas = document.getElementById("chessBoard");
 const ctx = canvas.getContext("2d");
 
@@ -55,10 +17,7 @@ function preloadImages() {
 const pieceImages = preloadImages();
 
 function getColor(value) {
-    if (COLORS === COLORS_BINARY) {
-        return COLORS[value === 0 ? 0 : 1];
-    }
-    return COLORS[value] || "#fabecc";
+    return COLORS[value === 0 ? 0 : 1];
 }
 
 function renderBoard(level) {
@@ -85,23 +44,7 @@ function renderBoard(level) {
 function drawPiece(piece, x, y) {
     const { type, color } = piece;
     const img = pieceImages[type];
-
     ctx.drawImage(img, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-
-    if (COLORS === COLORS_BINARY) {
-        return; // No need to draw color indicator in binary mode
-    }
-
-    // Draw a small circle on top of the piece to show its color
-    const circleRadius = CELL_SIZE / 8;
-    const circleCenterX = x * CELL_SIZE + CELL_SIZE / 2;
-    const circleCenterY = y * CELL_SIZE + CELL_SIZE / 2;
-
-    ctx.fillStyle = getColor(color);
-    ctx.beginPath();
-    ctx.arc(circleCenterX, circleCenterY, circleRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
 }
 
 function renderPieces(level) {
@@ -292,35 +235,22 @@ function animatePieceMove(piece, targetX, targetY, callback) {
     step();
 }
 
-let COLORS = COLORS_BINARY; // Default color scheme
+const COLORS = {
+    0: "#75481dff",
+    1: "#c3c98dff"
+};
 
-document.getElementById("colorScheme").addEventListener("change", (event) => {
-    if (event.target.value === "COLORS1") {
-        COLORS = COLORS1;
-    } else if (event.target.value === "COLORS2") {
-        COLORS = COLORS2;
-    } else if (event.target.value === "COLORS_BINARY") {
-        COLORS = COLORS_BINARY;
-    } else {
-        COLORS = COLORS3;
-    }
-    loadLevel(level1); // Re-render the board with the new color scheme
-});
+// Remove the colorScheme event listener
+// Remove the logic for other color schemes in getColor
+function getColor(value) {
+    return COLORS[value === 0 ? 0 : 1];
+}
 
-document.getElementById("sevenToOne").addEventListener("change", () => {
-    loadLevel(level1); // Re-render the board to reflect the checkbox state
-});
-
+// Remove the sevenToOne checkbox logic
+// Update the color of the squares the piece moved through
 function updateColor(grid, x, y, color) {
-    if (COLORS === COLORS_BINARY) {
-        // Flip the color for binary scheme
-        grid[y][x] = grid[y][x] === 0 ? 1 : 0;
-    } else {
-        grid[y][x] = (grid[y][x] | color);
-        if (grid[y][x] === 7 && document.getElementById("sevenToOne").checked) {
-            grid[y][x] = 0;
-        }
-    }
+    // Flip the color for binary scheme
+    grid[y][x] = grid[y][x] === 0 ? 1 : 0;
 }
 
 function updatePathColors(piece, targetX, targetY) {
