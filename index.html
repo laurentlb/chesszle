@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess-Color Puzzle</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+        textarea {
+            display: block;
+            width: 90%;
+            height: 150px;
+            margin: 10px auto;
+            font-family: monospace;
+        }
+        button, select, label {
+            display: block;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <label for="colorScheme">Color Scheme:</label>
+    <select id="colorScheme">
+        <option value="COLORS_BINARY">binary</option>
+        <option value="COLORS3">subtractive (ryb)</option>
+        <option value="COLORS2">subtractive (cmy)</option>
+        <option value="COLORS1">additive (rgb)</option>
+    </select>
+    <label>
+        <input type="checkbox" id="sevenToOne" checked> loop (black = white)
+    </label>
+    <textarea id="levelEditor"></textarea>
+    <button id="loadLevelButton">Load Level</button>
+    <canvas id="chessBoard"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>
