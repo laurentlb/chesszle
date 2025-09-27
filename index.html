@@ -5,10 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess-Color Puzzle</title>
     <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #ffffff;
+        }
         canvas {
-            border: 1px solid black;
+            border: 1px solid #ffffff;
             display: block;
-            margin: 0 auto;
+            margin: 20px auto;
         }
         textarea {
             display: block;
@@ -16,22 +27,65 @@
             height: 150px;
             margin: 10px auto;
             font-family: monospace;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border: 1px solid #444;
+            padding: 10px;
         }
-        button, select, label {
+        button {
             display: block;
-            margin: 10px;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #007acc;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #005f99;
+        }
+        #infoContainer {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        #undoButton {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+        }
+        #levelClearedMessage {
+            text-align: center;
+            margin-top: 10px;
+            color: #4caf50;
+            font-size: 20px;
+            display: none;
+        }
+        .instructions {
+            text-align: center;
+            margin: 20px auto;
+            font-size: 18px;
+            color: #b0b0b0;
         }
     </style>
 </head>
 <body>
-    <textarea id="levelEditor"></textarea>
-    <button id="loadLevelButton">Load Level</button>
+    <h2>Can you solve the puzzle?</h2>
+    <p class="instructions">
+        Select a piece and move it to change the colors of the board. Try to make all squares the same color!
+    </p>
 
-    <div id="infoContainer" style="text-align: center; margin-bottom: 10px;">Moves: 0 / Par: 0</div>
-    <button id="undoButton" style="display: block; margin: 10px auto;" disabled>Undo</button>
+    <div id="infoContainer">Moves: 0 / Par: 0</div>
+    <button id="undoButton" disabled>Undo</button>
 
     <canvas id="chessBoard"></canvas>
-    <div id="levelClearedMessage" style="text-align: center; margin-top: 10px; color: green; font-size: 20px; display: none;">Level Cleared!</div>
+    <div id="levelClearedMessage">Level Cleared!</div>
 
     <script src="game.js"></script>
 </body>

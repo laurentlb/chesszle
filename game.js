@@ -61,26 +61,23 @@ let level1 = new Level({
 
 let selectedPiece = null; // Currently selected piece
 
-// Preload images for all piece types
+// Preload images for all piece types and board squares
 function preloadImages() {
     const images = {};
     ["rook", "bishop", "knight", "wall"].forEach(type => {
         const img = new Image();
-        img.src = `img/${type}.svg`;
+        img.src = `img/${type}.svg`; // SVG files for pieces and walls
+        images[type] = img;
+    });
+    ["square_dark", "square_light"].forEach(type => {
+        const img = new Image();
+        img.src = `img/${type}.png`; // PNG files for board squares
         images[type] = img;
     });
     return images;
 }
 
 const pieceImages = preloadImages();
-
-// Preload images for board squares
-const squareImages = {
-    dark: new Image(),
-    light: new Image()
-};
-squareImages.dark.src = "img/square_dark.png";
-squareImages.light.src = "img/square_light.png";
 
 function renderBoard(level) {
     const { width, height, grid } = level;
@@ -90,7 +87,7 @@ function renderBoard(level) {
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const value = grid[y][x];
-            const squareImage = (x + y) % 2 === 0 ? squareImages.light : squareImages.dark;
+            const squareImage = value === 0 ? pieceImages["square_light"] : pieceImages["square_dark"];
 
             if (value === -1) {
                 // Draw wall
@@ -98,6 +95,7 @@ function renderBoard(level) {
             } else {
                 // Draw square using the appropriate image
                 ctx.drawImage(squareImage, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             }
         }
     }
@@ -225,7 +223,6 @@ function isValidMove(piece, targetX, targetY) {
     }
 
     // Get the squares visited during the move
-    console.log("Checking path for piece:", piece, "to", targetX, targetY);
     const visitedSquares = getVisitedSquares(piece, targetX, targetY);
 
     // Check if any visited square is a wall or occupied by another piece
@@ -342,6 +339,7 @@ function formatLevelCompact(level) {
     return json;
 }
 
+/*
 document.getElementById("levelEditor").value = formatLevelCompact(level1);
 
 document.getElementById("loadLevelButton").addEventListener("click", () => {
@@ -353,6 +351,7 @@ document.getElementById("loadLevelButton").addEventListener("click", () => {
         console.error("Failed to load level:", error);
     }
 });
+*/
 
 let moveHistory = []; // Store the history of moves
 
@@ -425,7 +424,11 @@ function highlightValidMoves(piece) {
         const centerY = y * CELL_SIZE + CELL_SIZE / 2;
         const radius = CELL_SIZE / 6;
 
-        ctx.fillStyle = "rgba(54, 105, 87, 0.8)"; // Semi-transparent green
+        if (level1.grid[y][x] === 1) {
+            ctx.fillStyle = "rgba(54, 135, 107, 0.8)"; // Semi-transparent green
+        } else {
+            ctx.fillStyle = "rgba(90, 129, 121, 0.8)"; // Semi-transparent green
+        }
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.fill();
