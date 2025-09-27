@@ -3,6 +3,63 @@ const ctx = canvas.getContext("2d");
 
 const CELL_SIZE = 50; // Size of each cell in pixels
 
+
+class Level {
+    constructor({ width, height, par, grid, pieces }) {
+        this.width = width;
+        this.height = height;
+        this.par = par;
+        this.grid = grid;
+        this.pieces = pieces.map(p => ({ ...p })); // Deep copy of pieces
+    }
+
+    getPieceAt(x, y) {
+        return this.pieces.find(p => p.x === x && p.y === y);
+    }
+
+    isWall(x, y) {
+        return this.grid[y][x] === -1;
+    }
+
+    updateGrid(x, y) {
+        this.grid[y][x] = this.grid[y][x] === 0 ? 1 : 0;
+    }
+
+    resetGrid(grid) {
+        this.grid = grid.map(row => [...row]); // Deep copy of grid
+    }
+
+    isCleared() {
+        const firstValue = this.grid[0][0];
+        return this.grid.every(row => row.every(cell => cell === firstValue));
+    }
+}
+
+// Replace level1 with an instance of Level
+let level1 = new Level({
+    width: 8,
+    height: 8,
+    par: 8,
+    grid: [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 1, 1, 1, 0],
+        [1, 0, 0, 1, 0, 0, 1, 0],
+        [1, 0, 0, 0, 0, 0, 1, 0],
+        [1, 1, 0, 0, 0, 1, 1, 0],
+        [0, 1, 1, 0, 1, 0, 1, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0]
+    ],
+    pieces: [
+        { type: "rook", x: 0, y: 0 },
+        { type: "rook", x: 7, y: 6 },
+        { type: "bishop", x: 2, y: 2 },
+        { type: "bishop", x: 2, y: 3 },
+        { type: "knight", x: 4, y: 4 }
+    ]
+});
+
+
 // Preload images for all piece types
 function preloadImages() {
     const images = {};
@@ -16,11 +73,12 @@ function preloadImages() {
 
 const pieceImages = preloadImages();
 
-function getColor(value) {
-    return COLORS[value === 0 ? 0 : 1];
-}
-
 function renderBoard(level) {
+    const COLORS = {
+        0: "#75481dff",
+        1: "#c3c98dff"
+    };
+
     const { width, height, grid } = level;
     canvas.width = width * CELL_SIZE;
     canvas.height = height * CELL_SIZE;
@@ -33,7 +91,7 @@ function renderBoard(level) {
                 ctx.drawImage(pieceImages["wall"], x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             } else {
                 // Draw regular square
-                ctx.fillStyle = getColor(value);
+                ctx.fillStyle = COLORS[value];
                 ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
                 ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             }
@@ -55,7 +113,6 @@ function renderPieces(level) {
     });
 }
 
-let level1 = null; // Define level1 before using it
 let moveCount = 0; // Initialize move counter
 
 // Create a container to display move count and par
@@ -87,26 +144,21 @@ function isLevelCleared(level) {
 }
 
 // Update the level cleared message
-function updateLevelClearedMessage(level) {
-    if (isLevelCleared(level)) {
+function updateLevelClearedMessage() {
+    if (level1.isCleared()) {
         levelClearedMessage.style.display = "block"; // Show the message
     } else {
         levelClearedMessage.style.display = "none"; // Hide the message
     }
 }
 
-function loadLevel(level) {
+function loadLevel(levelData) {
     moveCount = 0; // Reset move count when loading a new level
-    level1 = level; // Assign the level to level1
-    updateMoveCount(); // Update the display
-    renderBoard(level);
-    renderPieces(level);
-    updateLevelClearedMessage(level); // Reset the level cleared message
-}
-
-// Update the move count display
-function updateMoveCount() {
-    infoContainer.innerHTML = `Moves: ${moveCount} / Par: ${level1.par}`;
+    level1 = new Level(levelData); // Create a new Level instance
+    updateMoveCount();
+    renderBoard(level1);
+    renderPieces(level1);
+    updateLevelClearedMessage();
 }
 
 function getVisitedSquares(piece, targetX, targetY) {
@@ -226,7 +278,7 @@ function animatePieceMove(piece, targetX, targetY, callback) {
 
             piece.x = targetX;
             piece.y = targetY;
-            updateColor(level1.grid, targetX, targetY, piece.color);
+            updateColor(targetX, targetY, piece.color);
 
             callback();
         }
@@ -235,37 +287,24 @@ function animatePieceMove(piece, targetX, targetY, callback) {
     step();
 }
 
-const COLORS = {
-    0: "#75481dff",
-    1: "#c3c98dff"
-};
-
-// Remove the colorScheme event listener
-// Remove the logic for other color schemes in getColor
-function getColor(value) {
-    return COLORS[value === 0 ? 0 : 1];
-}
-
-// Remove the sevenToOne checkbox logic
 // Update the color of the squares the piece moved through
-function updateColor(grid, x, y, color) {
-    // Flip the color for binary scheme
-    grid[y][x] = grid[y][x] === 0 ? 1 : 0;
+function updateColor(x, y) {
+    level1.updateGrid(x, y);
 }
 
 function updatePathColors(piece, targetX, targetY) {
     const visitedSquares = getVisitedSquares(piece, targetX, targetY);
     visitedSquares.forEach(({ x, y }) => {
-        updateColor(level1.grid, x, y, piece.color);
+        updateColor(x, y);
     });
 }
 
 // Example level
-level1 = {
-    "width": 8,
-    "height": 8,
-    "par": 8,
-    "grid": [
+level1 = new Level({
+    width: 8,
+    height: 8,
+    par: 8,
+    grid: [
         [0, 0, 0, 0, 0, 0, 0, 0],
         [1, 0, 0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 1, 1, 1, 0],
@@ -275,8 +314,14 @@ level1 = {
         [0, 1, 1, 0, 1, 0, 1, 0],
         [0, 0, 0, 1, 0, 0, 0, 0]
     ],
-    "pieces": [{ "type": "rook", "x": 0, "y": 0, "color": 1 }, { "type": "rook", "x": 7, "y": 6, "color": 4 }, { "type": "bishop", "x": 2, "y": 2, "color": 2 }, { "type": "bishop", "x": 2, "y": 3, "color": 2 }, { "type": "knight", "x": 4, "y": 4, "color": 4 }]
-};
+    pieces: [
+        { type: "rook", x: 0, y: 0 },
+        { type: "rook", x: 7, y: 6 },
+        { type: "bishop", x: 2, y: 2 },
+        { type: "bishop", x: 2, y: 3 },
+        { type: "knight", x: 4, y: 4 }
+    ]
+});
 
 // Wait until images are loaded before loading the level
 Promise.all(Object.values(pieceImages).map(img => { 
@@ -341,7 +386,7 @@ function undoLastMove() {
     updateMoveCount(); // Update the display
     renderBoard(level1);
     renderPieces(level1);
-    updateLevelClearedMessage(level1); // Check if the level is cleared
+    updateLevelClearedMessage(); // Check if the level is cleared
 
     // Disable the undo button if no moves are left
     if (moveHistory.length === 0) {
@@ -356,11 +401,11 @@ canvas.addEventListener("click", (event) => {
     const y = Math.floor((event.clientY - rect.top) / CELL_SIZE);
 
     // Prevent selecting or moving to a wall
-    if (level1.grid[y][x] === -1) {
+    if (level1.isWall(x, y)) {
         return;
     }
 
-    const pieceOnSquare = level1.pieces.find(p => p.x === x && p.y === y);
+    const pieceOnSquare = level1.getPieceAt(x, y);
     if (pieceOnSquare) {
         selectedPiece = pieceOnSquare;
     } else if (selectedPiece) {
@@ -371,7 +416,7 @@ canvas.addEventListener("click", (event) => {
                 piece: selectedPiece,
                 previousX: selectedPiece.x,
                 previousY: selectedPiece.y,
-                previousGrid: JSON.parse(JSON.stringify(level1.grid)) // Deep copy of the grid
+                previousGrid: level1.grid.map(row => [...row]) // Deep copy of grid
             });
 
             undoButton.disabled = false; // Enable the undo button
@@ -383,7 +428,7 @@ canvas.addEventListener("click", (event) => {
                 updateMoveCount(); // Update the display
                 renderBoard(level1);
                 renderPieces(level1);
-                updateLevelClearedMessage(level1); // Check if the level is cleared
+                updateLevelClearedMessage(); // Check if the level is cleared
             });
         }
     }
