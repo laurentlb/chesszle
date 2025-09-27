@@ -396,43 +396,55 @@ function undoLastMove() {
 
 // Modify the canvas click event to save move history
 canvas.addEventListener("click", (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((event.clientX - rect.left) / CELL_SIZE);
-    const y = Math.floor((event.clientY - rect.top) / CELL_SIZE);
+    const { x, y } = getClickCoordinates(event);
 
-    // Prevent selecting or moving to a wall
-    if (level1.isWall(x, y)) {
-        return;
-    }
+    if (level1.isWall(x, y)) return;
 
     const pieceOnSquare = level1.getPieceAt(x, y);
     if (pieceOnSquare) {
-        selectedPiece = pieceOnSquare;
+        handlePieceSelection(pieceOnSquare);
     } else if (selectedPiece) {
-        // Attempt to move the selected piece
-        if (isValidMove(selectedPiece, x, y)) {
-            // Save the current state before making the move
-            moveHistory.push({
-                piece: selectedPiece,
-                previousX: selectedPiece.x,
-                previousY: selectedPiece.y,
-                previousGrid: level1.grid.map(row => [...row]) // Deep copy of grid
-            });
-
-            undoButton.disabled = false; // Enable the undo button
-
-            animatePieceMove(selectedPiece, x, y, () => {
-                selectedPiece.x = x;
-                selectedPiece.y = y;
-                moveCount++; // Increment move count
-                updateMoveCount(); // Update the display
-                renderBoard(level1);
-                renderPieces(level1);
-                updateLevelClearedMessage(); // Check if the level is cleared
-            });
-        }
+        handlePieceMove(selectedPiece, x, y);
     }
 });
+
+function getClickCoordinates(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: Math.floor((event.clientX - rect.left) / CELL_SIZE),
+        y: Math.floor((event.clientY - rect.top) / CELL_SIZE),
+    };
+}
+
+function handlePieceSelection(piece) {
+    selectedPiece = piece;
+}
+
+function handlePieceMove(piece, targetX, targetY) {
+    if (!isValidMove(piece, targetX, targetY)) return;
+
+    saveMoveHistory(piece, targetX, targetY);
+
+    animatePieceMove(piece, targetX, targetY, () => {
+        piece.x = targetX;
+        piece.y = targetY;
+        moveCount++;
+        updateMoveCount();
+        renderBoard(level1);
+        renderPieces(level1);
+        updateLevelClearedMessage();
+    });
+}
+
+function saveMoveHistory(piece, targetX, targetY) {
+    moveHistory.push({
+        piece,
+        previousX: piece.x,
+        previousY: piece.y,
+        previousGrid: level1.grid.map(row => [...row]), // Deep copy of grid
+    });
+    undoButton.disabled = false; // Enable the undo button
+}
 
 // Attach the undo button click event
 undoButton.addEventListener("click", undoLastMove);
