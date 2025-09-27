@@ -100,7 +100,7 @@ function renderBoard(level) {
 }
 
 function drawPiece(piece, x, y) {
-    const { type, color } = piece;
+    const { type } = piece;
     const img = pieceImages[type];
     ctx.drawImage(img, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
@@ -114,23 +114,6 @@ function renderPieces(level) {
 }
 
 let moveCount = 0; // Initialize move counter
-
-// Create a container to display move count and par
-const infoContainer = document.createElement("div");
-infoContainer.style.textAlign = "center";
-infoContainer.style.marginBottom = "10px";
-infoContainer.innerHTML = `Moves: ${moveCount} / Par: 0`;
-canvas.parentNode.insertBefore(infoContainer, canvas);
-
-// Create a container for the level cleared message
-const levelClearedMessage = document.createElement("div");
-levelClearedMessage.style.textAlign = "center";
-levelClearedMessage.style.marginTop = "10px";
-levelClearedMessage.style.color = "green";
-levelClearedMessage.style.fontSize = "20px";
-levelClearedMessage.style.display = "none"; // Initially hidden
-levelClearedMessage.textContent = "Level Cleared!";
-canvas.parentNode.insertBefore(levelClearedMessage, canvas.nextSibling);
 
 // Update the move count display
 function updateMoveCount() {
@@ -359,14 +342,6 @@ document.getElementById("loadLevelButton").addEventListener("click", () => {
 });
 
 let moveHistory = []; // Store the history of moves
-
-// Create an undo button
-const undoButton = document.createElement("button");
-undoButton.textContent = "Undo";
-undoButton.style.display = "block";
-undoButton.style.margin = "10px auto";
-undoButton.disabled = true; // Initially disabled
-canvas.parentNode.insertBefore(undoButton, canvas);
 
 // Function to undo the last move
 function undoLastMove() {
