@@ -11,6 +11,12 @@ class Level {
         this.par = par;
         this.grid = grid.map(row => [...row]); // Deep copy of grid
         this.pieces = pieces.map(p => ({ ...p })); // Deep copy of pieces
+        // Assign default color if not specified
+        this.pieces.forEach(p => {
+            if (!p.color) {
+                p.color = "black";
+            }
+        });
     }
 
     getPieceAt(x, y) {
@@ -37,14 +43,21 @@ class Level {
 
 let currentLevel = null;
 let selectedPiece = null; // Currently selected piece
+let currentTurn = "white"; // White starts the game
 
 // Preload images for all piece types and board squares
 function preloadImages() {
     const images = {};
-    ["rook", "bishop", "knight", "wall"].forEach(type => {
+    ["rook", "bishop", "knight"].forEach(type => {
+        // Load black pieces
         const img = new Image();
-        img.src = `img/${type}.svg`; // SVG files for pieces and walls
+        img.src = `img/${type}.svg`; // SVG files for black pieces and walls
         images[type] = img;
+
+        // Load white pieces
+        const imgWhite = new Image();
+        imgWhite.src = `img/${type}w.svg`; // SVG files for white pieces
+        images[`${type}w`] = imgWhite;
     });
     ["square_dark", "square_light"].forEach(type => {
         const img = new Image();
@@ -79,8 +92,8 @@ function renderBoard(level) {
 }
 
 function drawPiece(piece, x, y) {
-    const { type } = piece;
-    const img = pieceImages[type];
+    const { type, color } = piece;
+    const img = pieceImages[color === "white" ? `${type}w` : type]; // Use white or black piece image
     ctx.drawImage(img, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
@@ -95,6 +108,7 @@ function renderPieces(level) {
 function render(level) {
     renderBoard(level);
     renderPieces(level);
+    updateTurn();
     if (selectedPiece) {
         highlightValidMoves(selectedPiece);
     }
@@ -355,6 +369,7 @@ function undoLastMove() {
 
     updateLevelClearedMessage();
     render(currentLevel); // Render the restored state
+    updateTurn(); // Update turn after undo
 }
 
 // Modify the canvas click event to save move history
@@ -365,7 +380,9 @@ canvas.addEventListener("click", (event) => {
 
     const pieceOnSquare = currentLevel.getPieceAt(x, y);
     if (pieceOnSquare) {
-        if (selectedPiece === pieceOnSquare) {
+        if (currentTurn && pieceOnSquare.color !== currentTurn) {
+            selectedPiece = null; // Deselect if the piece color doesn't match the turn
+        } else if (selectedPiece === pieceOnSquare) {
             selectedPiece = null; // Deselect if the same piece is clicked
         } else {
             selectedPiece = pieceOnSquare;
@@ -428,11 +445,43 @@ function highlightValidMoves(piece) {
     });
 }
 
+// Update the turn-switch logic to work after undo and restart, and ensure the turn is determined based on the number of moves modulo 2. Handle cases where only one color remains, and prevent selecting pieces of the wrong color.
+function updateTurn() {
+    const hasWhite = currentLevel.pieces.some(piece => piece.color === "white");
+    const hasBlack = currentLevel.pieces.some(piece => piece.color === "black");
+
+    if (hasWhite && hasBlack) {
+        currentTurn = moveHistory.length % 2 === 0 ? "white" : "black"; // Determine turn based on move count
+    } else {
+        currentTurn = null; // No alternation needed if only one color remains
+    }
+    if (selectedPiece && currentTurn && selectedPiece.color !== currentTurn) {
+        selectedPiece = null; // Deselect if the piece color doesn't match the turn
+    }
+    updateTurnDisplay();
+}
+
+function updateTurnDisplay() {
+    const display = document.getElementById("display-message");
+    if (currentLevel.isCleared()) {
+        display.textContent = "Level Cleared!";
+        return;
+    }
+    display.textContent = currentTurn
+        ? `${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} to play.`
+        : "";
+}
+
 // Modify handlePieceMove to clear highlights after moving
 function handlePieceMove(piece, targetX, targetY) {
     if (!isValidMove(piece, targetX, targetY)) {
         selectedPiece = null;
         render(currentLevel);
+        return;
+    }
+
+    if (currentTurn && piece.color !== currentTurn) {
+        alert(`It's ${currentTurn}'s turn!`);
         return;
     }
 
@@ -529,22 +578,6 @@ function populateLevelList() {
     });
 }
 
-// Event listeners for the level selector
-levelSelectorButton.addEventListener("click", () => {
-    populateLevelList();
-    toggleLevelSelector();
-});
-
-modalOverlay.addEventListener("click", toggleLevelSelector);
-
-// Initialize the first level
-loadLevel(levels[currentLevelIndex]);
-undoButton.addEventListener("click", undoLastMove);
-restartButton.addEventListener("click", restartLevel);
-nextLevelButton.addEventListener("click", loadNextLevel);
-
-// Initialize the first level
-loadLevel(levels[currentLevelIndex]);
 
 function editor(pieces) {
     currentLevel.id = "editor-level"; // Assign a unique ID for the editor level
@@ -601,3 +634,17 @@ function loadProgress() {
 
 // Call loadProgress when the page loads
 loadProgress();
+
+// Initialize the first level
+loadLevel(levels[currentLevelIndex]);
+
+// Event listeners
+levelSelectorButton.addEventListener("click", () => {
+    populateLevelList();
+    toggleLevelSelector();
+});
+
+modalOverlay.addEventListener("click", toggleLevelSelector);
+undoButton.addEventListener("click", undoLastMove);
+restartButton.addEventListener("click", restartLevel);
+nextLevelButton.addEventListener("click", loadNextLevel);
