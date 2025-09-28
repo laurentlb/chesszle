@@ -1,3 +1,5 @@
-Chess pieces by Cburnett
-https://en.wikipedia.org/wiki/Chess_piece
-Creative Commons Attribution-Share Alike 3.0 Unported license
+Chess pieces by Maurizio Monge
+License: MIT License
+Copied from https://github.com/lichess-org/lila/tree/master/public/piece/fantasy
+https://poisson.phc.dm.unipi.it/~monge/chess_art.php
+https://github.com/maurimo/chess-art
