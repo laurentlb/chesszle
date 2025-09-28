@@ -39,6 +39,49 @@ class Level {
         return this.grid.every(row => row.every(cell => cell === firstValue));
     }
 
+    getVisitedSquares(piece, targetX, targetY) {
+        const visited = [];
+        const { x: startX, y: startY } = piece;
+
+        if (piece.type === "rook") {
+            if (startX === targetX) {
+                // Vertical movement
+                const [minY, maxY] = [startY, targetY].sort((a, b) => a - b);
+                for (let y = minY + 1; y < maxY; y++) {
+                    visited.push({ x: startX, y });
+                }
+            } else if (startY === targetY) {
+                // Horizontal movement
+                const [minX, maxX] = [startX, targetX].sort((a, b) => a - b);
+                for (let x = minX + 1; x < maxX; x++) {
+                    visited.push({ x, y: startY });
+                }
+            }
+        } else if (piece.type === "bishop") {
+            // Diagonal movement
+            const dx = targetX > startX ? 1 : -1;
+            const dy = targetY > startY ? 1 : -1;
+
+            let x = startX + dx;
+            let y = startY + dy;
+
+            while (x !== targetX && y !== targetY) {
+                visited.push({ x, y });
+                x += dx;
+                y += dy;
+            }
+        }
+
+        return visited;
+    }
+
+    updatePathColors(piece, targetX, targetY) {
+        const visitedSquares = this.getVisitedSquares(piece, targetX, targetY);
+        visitedSquares.forEach(({ x, y }) => {
+            currentLevel.updateGrid(x, y);
+        });
+    }
+
     isValidMove(piece, targetX, targetY) {
         if (targetX < 0 || targetX >= currentLevel.width || targetY < 0 || targetY >= currentLevel.height) {
             return false; // Out of bounds
@@ -73,7 +116,7 @@ class Level {
         }
 
         // Get the squares visited during the move
-        const visitedSquares = getVisitedSquares(piece, targetX, targetY);
+        const visitedSquares = this.getVisitedSquares(piece, targetX, targetY);
 
         // Check if any visited square is occupied by another piece
         for (const { x, y } of visitedSquares) {
@@ -151,7 +194,7 @@ function render(level) {
     if (selectedPiece) {
         highlightValidMoves(selectedPiece);
     }
-    nextLevelButton.disabled = !currentLevel.bestMoves;
+    nextLevelButton.disabled = !levels[currentLevelIndex].bestMoves;
 }
 
 // Update the move count display
@@ -172,7 +215,7 @@ function updateMoveCount() {
 // Update the level cleared message
 function checkVictory() {
     if (currentLevel.isCleared()) {
-        const currentLevelData = currentLevel;
+        const currentLevelData = levels[currentLevelIndex];
         const moves = moveHistory.length;
 
         // Update the bestMoves if it's null or if the current moves are fewer
@@ -186,9 +229,10 @@ function checkVictory() {
 
 function loadLevel(levelData) {
     currentLevel = new Level(levelData); // Initialize currentLevel
+    console.log("Loaded level:", currentLevel);
     moveHistory = []; // Clear the undo list
     selectedPiece = null; // Deselect any selected piece
-    updateCurrentLevelDisplay();
+    levelSelectorButton.textContent = `Level ${currentLevelIndex + 1}`;
     render(currentLevel);
 }
 
@@ -199,46 +243,6 @@ function loadNextLevel() {
     } else {
         toggleModal("congratulationsPopup", true); // Show the popup if it's the last level
     }
-}
-
-function updateCurrentLevelDisplay() {
-    levelSelectorButton.textContent = `Level ${currentLevelIndex + 1}`;
-}
-
-function getVisitedSquares(piece, targetX, targetY) {
-    const visited = [];
-    const { x: startX, y: startY } = piece;
-
-    if (piece.type === "rook") {
-        if (startX === targetX) {
-            // Vertical movement
-            const [minY, maxY] = [startY, targetY].sort((a, b) => a - b);
-            for (let y = minY + 1; y < maxY; y++) {
-                visited.push({ x: startX, y });
-            }
-        } else if (startY === targetY) {
-            // Horizontal movement
-            const [minX, maxX] = [startX, targetX].sort((a, b) => a - b);
-            for (let x = minX + 1; x < maxX; x++) {
-                visited.push({ x, y: startY });
-            }
-        }
-    } else if (piece.type === "bishop") {
-        // Diagonal movement
-        const dx = targetX > startX ? 1 : -1;
-        const dy = targetY > startY ? 1 : -1;
-
-        let x = startX + dx;
-        let y = startY + dy;
-
-        while (x !== targetX && y !== targetY) {
-            visited.push({ x, y });
-            x += dx;
-            y += dy;
-        }
-    }
-
-    return visited;
 }
 
 function animatePieceMove(piece, targetX, targetY, callback) {
@@ -277,27 +281,6 @@ function animatePieceMove(piece, targetX, targetY, callback) {
 
     step();
 }
-
-function updatePathColors(piece, targetX, targetY) {
-    const visitedSquares = getVisitedSquares(piece, targetX, targetY);
-    visitedSquares.forEach(({ x, y }) => {
-        currentLevel.updateGrid(x, y);
-    });
-}
-
-// Wait until images are loaded before loading the level
-Promise.all(Object.values(pieceImages).map(img => { 
-    return new Promise((resolve) => {
-        if (img.complete) {
-            resolve();
-        } else {
-            img.onload = resolve;
-            img.onerror = resolve; // Proceed even if image fails to load
-        }
-    });
-})).then(() => {
-    loadLevel(levels[currentLevelIndex]); // Load the initial level
-});
 
 function formatLevelCompact(level) {
     let json = JSON.stringify(level, null, 4);
@@ -428,10 +411,7 @@ function updateTurn() {
     if (selectedPiece && currentTurn && selectedPiece.color !== currentTurn) {
         selectedPiece = null; // Deselect if the piece color doesn't match the turn
     }
-    updateTurnDisplay();
-}
 
-function updateTurnDisplay() {
     const display = document.getElementById("display-message");
     if (currentLevel.isCleared()) {
         display.textContent = "Level Cleared!";
@@ -462,7 +442,7 @@ function handlePieceMove(piece, targetX, targetY) {
     animatePieceMove(piece, targetX, targetY, () => {
         // Update the color of the squares the piece moved through
         if (piece.type === "rook" || piece.type === "bishop") {
-            updatePathColors(piece, targetX, targetY);
+            currentLevel.updatePathColors(piece, targetX, targetY);
         }
 
         currentLevel.updateGrid(targetX, targetY);
@@ -609,8 +589,19 @@ function loadProgress() {
 // Call loadProgress when the page loads
 loadProgress();
 
-// Initialize the first level
-loadLevel(levels[currentLevelIndex]);
+// Wait until images are loaded before loading the level
+Promise.all(Object.values(pieceImages).map(img => { 
+    return new Promise((resolve) => {
+        if (img.complete) {
+            resolve();
+        } else {
+            img.onload = resolve;
+            img.onerror = resolve; // Proceed even if image fails to load
+        }
+    });
+})).then(() => {
+    loadLevel(levels[currentLevelIndex]); // Load the initial level
+});
 
 // Event listeners
 levelSelectorButton.addEventListener("click", () => {
