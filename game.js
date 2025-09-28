@@ -125,11 +125,9 @@ function updateLevelClearedMessage() {
             updateLevelList();
         }
 
-        levelClearedMessage.style.display = "block"; // Show the message
         nextLevelButton.style.display = "block"; // Show the "Next Level" button
         nextLevelButton.disabled = false; // Enable the "Next Level" button
     } else {
-        levelClearedMessage.style.display = "none"; // Hide the message
         nextLevelButton.style.display = "none"; // Hide the "Next Level" button
     }
 }
@@ -207,7 +205,7 @@ function loadNextLevel() {
 
 function updateCurrentLevelDisplay() {
     const currentLevel = levels[currentLevelIndex];
-    document.getElementById("currentLevel").textContent = `Level: ${currentLevelIndex + 1}`;
+    // document.getElementById("currentLevel").textContent = `Level: ${currentLevelIndex + 1}`;
 }
 
 function getVisitedSquares(piece, targetX, targetY) {
@@ -519,34 +517,45 @@ function updateLevelList() {
 
     levels.forEach((level, index) => {
         const isAccessible = index === 0 || levels[index - 1].bestMoves !== null;
-        const listItem = document.createElement("li");
-        listItem.style.margin = "10px 0";
 
-        const levelButton = document.createElement("button");
-        levelButton.textContent = `Level ${index + 1} - Best: ${level.bestMoves ?? "--"} / Par: ${level.par}`;
-        levelButton.disabled = !isAccessible;
-        levelButton.style.cursor = isAccessible ? "pointer" : "not-allowed";
-        levelButton.style.backgroundColor = isAccessible ? "#007acc" : "#555";
-        levelButton.style.color = "#ffffff";
-        levelButton.style.border = "none";
-        levelButton.style.padding = "10px 20px";
-        levelButton.style.borderRadius = "5px";
+        // Create the level card
+        const levelCard = document.createElement("div");
+        levelCard.className = "levelCard";
+        levelCard.style.backgroundColor = isAccessible ? "#1e1e1e" : "#555";
+        levelCard.style.color = isAccessible ? "#ffffff" : "#888";
+        levelCard.style.cursor = isAccessible ? "pointer" : "not-allowed";
 
-        // Highlight if the best score is less than or equal to the par
-        if (level.bestMoves !== null && level.bestMoves <= level.par) {
-            levelButton.style.fontWeight = "bold";
-            levelButton.style.backgroundColor = "#4caf50"; // Green for par or better
+        // Highlight the current level
+        if (index === currentLevelIndex) {
+            levelCard.style.border = "2px solid #4caf50"; // Green border for the current level
         }
 
-        levelButton.addEventListener("click", () => {
-            if (isAccessible) {
+        if (isAccessible) {
+            levelCard.addEventListener("click", () => {
                 currentLevelIndex = index;
                 loadLevel(levels[currentLevelIndex]);
-            }
-        });
+            });
+        }
 
-        listItem.appendChild(levelButton);
-        levelList.appendChild(listItem);
+        // Level number
+        const levelNumber = document.createElement("h4");
+        levelNumber.className = "levelNumber";
+        levelNumber.textContent = `Level ${index + 1}`;
+
+        // Best score and par
+        const scoreInfo = document.createElement("p");
+        scoreInfo.className = "levelScore";
+        scoreInfo.innerHTML = `<strong>${level.bestMoves ?? "--"}</strong> / <strong>${level.par}</strong>`;
+        if (level.bestMoves !== null && level.bestMoves <= level.par) {
+            scoreInfo.style.color = "#4caf50"; // Green for par or better
+        }
+
+        // Append elements to the card
+        levelCard.appendChild(levelNumber);
+        levelCard.appendChild(scoreInfo);
+
+        // Add the card to the grid
+        levelList.appendChild(levelCard);
     });
 }
 
@@ -554,6 +563,10 @@ function updateLevelList() {
 restartButton.addEventListener("click", restartLevel);
 nextLevelButton.addEventListener("click", loadNextLevel);
 // Attach the undo button click event
+undoButton.addEventListener("click", undoLastMove);
+
+// Initialize the first level
+loadLevel(levels[currentLevelIndex]);
 undoButton.addEventListener("click", undoLastMove);
 
 // Initialize the first level
