@@ -103,11 +103,11 @@ function render(level) {
 // Update the move count display
 function updateMoveCount() {
     moveInfo.innerHTML = `${moveHistory.length}`;
-    if (levels[currentLevelIndex].bestMoves === null) {
+    if (!levels[currentLevelIndex].bestMoves) {
         parInfo.style.visibility = "hidden";
     } else {
         parInfo.style.visibility = "visible";
-        const best = levels[currentLevelIndex].bestMoves !== null ? levels[currentLevelIndex].bestMoves : "--";
+        const best = levels[currentLevelIndex].bestMoves ? levels[currentLevelIndex].bestMoves : "--";
         parInfo.innerHTML = `${best} / ${currentLevel.par}`;
         parInfo.title = `Best: ${best} / Par: ${currentLevel.par}`;
     }
@@ -128,7 +128,7 @@ function updateLevelClearedMessage() {
         const moves = moveHistory.length;
 
         // Update the bestMoves if it's null or if the current moves are fewer
-        if (currentLevelData.bestMoves === null || moves < currentLevelData.bestMoves) {
+        if (!currentLevelData.bestMoves || moves < currentLevelData.bestMoves) {
             currentLevelData.bestMoves = moves;
         }
 
@@ -144,6 +144,21 @@ function updateLevelClearedMessage() {
 let moveHistory = []; // Store the history of moves, including grid and pieces
 
 const levels = [
+    {
+    "width": 8,
+    "height": 8,
+    "par": 1,
+    "grid": [[ 0, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],
+    "pieces": [{ "type": "rook", "x": 0, "y": 0 }, { "type": "bishop", "x": 2, "y": 2 }]
+},
     {
         width: 8,
         height: 8,
@@ -165,7 +180,6 @@ const levels = [
             { type: "bishop", x: 2, y: 3 },
             { type: "knight", x: 4, y: 4 }
         ],
-        bestMoves: null // Track the minimum number of moves
     },
     {
         width: 8,
@@ -188,7 +202,6 @@ const levels = [
             { type: "bishop", x: 2, y: 3 },
             { type: "knight", x: 4, y: 4 }
         ],
-        bestMoves: null // Track the minimum number of moves
     }
 ];
 
@@ -596,3 +609,34 @@ nextLevelButton.addEventListener("click", loadNextLevel);
 
 // Initialize the first level
 loadLevel(levels[currentLevelIndex]);
+
+function editor(pieces) {
+    // Create a blank grid
+    const blankGrid = Array.from({ length: currentLevel.height }, () =>
+        Array(currentLevel.width).fill(0)
+    );
+
+    // Reset the current level with the blank grid and provided pieces
+    currentLevel.grid = blankGrid;
+    currentLevel.pieces = pieces.map(p => ({ ...p })); // Deep copy of pieces
+
+    moveHistory = []; // Clear the move history
+    selectedPiece = null; // Deselect any selected piece
+
+    updateMoveCount(); // Update the move count display
+    render(currentLevel); // Render the blank board with the new pieces
+}
+
+// Save the current level as compact JSON
+function editorSave() {
+    const levelData = {
+        width: currentLevel.width,
+        height: currentLevel.height,
+        par: moveHistory.length, // Set par to the current number of moves
+        grid: currentLevel.grid, // Current grid state
+        pieces: moveHistory[0].pieces
+    };
+
+    console.log(formatLevelCompact(levelData));
+    return JSON.stringify(levelData, null, 0); // Compact JSON
+}
