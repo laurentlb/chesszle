@@ -96,7 +96,6 @@ function render(level) {
     renderBoard(level);
     renderPieces(level);
     if (selectedPiece) {
-        console.log("Rendering highlights for", selectedPiece);
         highlightValidMoves(selectedPiece);
     }
 }
@@ -131,7 +130,6 @@ function updateLevelClearedMessage() {
         // Update the bestMoves if it's null or if the current moves are fewer
         if (currentLevelData.bestMoves === null || moves < currentLevelData.bestMoves) {
             currentLevelData.bestMoves = moves;
-            updateLevelList();
         }
 
         nextLevelButton.style.display = "block"; // Show the "Next Level" button
@@ -202,7 +200,6 @@ function loadLevel(levelData) {
     selectedPiece = null; // Deselect any selected piece
     updateLevelClearedMessage();
     updateCurrentLevelDisplay();
-    updateLevelList(); // Update the level list display
     render(currentLevel);
 }
 
@@ -214,9 +211,7 @@ function loadNextLevel() {
 }
 
 function updateCurrentLevelDisplay() {
-    const currentLevel = levels[currentLevelIndex];
     levelSelectorButton.textContent = `Level ${currentLevelIndex + 1}`;
-    // document.getElementById("levelInfo").textContent = `Level ${currentLevelIndex + 1}`;
 }
 
 function getVisitedSquares(piece, targetX, targetY) {
@@ -510,6 +505,9 @@ function saveMoveHistory(piece, targetX, targetY) {
 
 const restartButton = document.getElementById("restartButton");
 const nextLevelButton = document.getElementById("nextLevelButton");
+const levelSelectorButton = document.getElementById("levelSelectorButton");
+const levelSelectorModal = document.getElementById("levelSelectorModal");
+const modalOverlay = document.getElementById("modalOverlay");
 
 function restartLevel() {
     if (moveHistory.length > 0) {
@@ -523,14 +521,15 @@ function restartLevel() {
     render(currentLevel); // Render the restored state
 }
 
-function loadNextLevel() {
-    if (currentLevelIndex < levels.length - 1) {
-        currentLevelIndex++;
-        loadLevel(levels[currentLevelIndex]);
-    }
+// Show or hide the level selector modal
+function toggleLevelSelector() {
+    const isVisible = levelSelectorModal.style.display === "block";
+    levelSelectorModal.style.display = isVisible ? "none" : "block";
+    modalOverlay.style.display = isVisible ? "none" : "block";
 }
 
-function updateLevelList() {
+// Populate the level list in the modal
+function populateLevelList() {
     const levelList = document.getElementById("levelList");
     levelList.innerHTML = ""; // Clear the list
 
@@ -540,30 +539,29 @@ function updateLevelList() {
         // Create the level card
         const levelCard = document.createElement("div");
         levelCard.className = "levelCard";
-        levelCard.style.backgroundColor = isAccessible ? "#1e1e1e" : "#555";
-        levelCard.style.color = isAccessible ? "#ffffff" : "#888";
         levelCard.style.cursor = isAccessible ? "pointer" : "not-allowed";
 
         // Highlight the current level
         if (index === currentLevelIndex) {
-            levelCard.style.border = "2px solid #4caf50"; // Green border for the current level
+            levelCard.classList.add("current");
         }
 
         if (isAccessible) {
             levelCard.addEventListener("click", () => {
                 currentLevelIndex = index;
                 loadLevel(levels[currentLevelIndex]);
+                toggleLevelSelector(); // Close the modal after selecting a level
             });
+        } else {
+            levelCard.classList.add("disabled");
         }
 
         // Level number
         const levelNumber = document.createElement("h4");
-        levelNumber.className = "levelNumber";
         levelNumber.textContent = `Level ${index + 1}`;
 
         // Best score and par
         const scoreInfo = document.createElement("p");
-        scoreInfo.className = "levelScore";
         scoreInfo.innerHTML = `<strong>${level.bestMoves ?? "--"}</strong> / <strong>${level.par}</strong>`;
         if (level.bestMoves !== null && level.bestMoves <= level.par) {
             scoreInfo.style.color = "#4caf50"; // Green for par or better
@@ -578,15 +576,19 @@ function updateLevelList() {
     });
 }
 
-// Attach event listeners to the buttons
-restartButton.addEventListener("click", restartLevel);
-nextLevelButton.addEventListener("click", loadNextLevel);
-// Attach the undo button click event
-undoButton.addEventListener("click", undoLastMove);
+// Event listeners for the level selector
+levelSelectorButton.addEventListener("click", () => {
+    populateLevelList();
+    toggleLevelSelector();
+});
+
+modalOverlay.addEventListener("click", toggleLevelSelector);
 
 // Initialize the first level
 loadLevel(levels[currentLevelIndex]);
 undoButton.addEventListener("click", undoLastMove);
+restartButton.addEventListener("click", restartLevel);
+nextLevelButton.addEventListener("click", loadNextLevel);
 
 // Initialize the first level
 loadLevel(levels[currentLevelIndex]);
