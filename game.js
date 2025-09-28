@@ -132,6 +132,7 @@ function updateLevelClearedMessage() {
             currentLevelData.bestMoves = moves;
             saveProgress(); // Save progress when the best score is updated
         }
+        selectedPiece = null; // Deselect any selected piece
     }
 
     nextLevelButton.disabled = !levels[currentLevelIndex].bestMoves;
@@ -545,6 +546,7 @@ nextLevelButton.addEventListener("click", loadNextLevel);
 loadLevel(levels[currentLevelIndex]);
 
 function editor(pieces) {
+    currentLevel.id = "editor-level"; // Assign a unique ID for the editor level
     // Create a blank grid
     const blankGrid = Array.from({ length: currentLevel.height }, () =>
         Array(currentLevel.width).fill(0)
@@ -575,13 +577,6 @@ function editorSave() {
     console.log(formatLevelCompact(levelData));
     return JSON.stringify(levelData, null, 0); // Compact JSON
 }
-
-// Add a unique ID to each level for tracking progress
-levels.forEach((level, index) => {
-    if (!level.id) {
-        level.id = `level-${index}`; // Assign a default ID if not provided
-    }
-});
 
 // Save progress to session storage
 function saveProgress() {
