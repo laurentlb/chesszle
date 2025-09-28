@@ -23,10 +23,6 @@ class Level {
         return this.pieces.find(p => p.x === x && p.y === y);
     }
 
-    isWall(x, y) {
-        return this.grid[y][x] === -1;
-    }
-
     updateGrid(x, y) {
         this.grid[y][x] = this.grid[y][x] === 0 ? 1 : 0;
     }
@@ -51,7 +47,7 @@ function preloadImages() {
     ["rook", "bishop", "knight"].forEach(type => {
         // Load black pieces
         const img = new Image();
-        img.src = `img/${type}.svg`; // SVG files for black pieces and walls
+        img.src = `img/${type}.svg`; // SVG files for black pieces
         images[type] = img;
 
         // Load white pieces
@@ -79,14 +75,9 @@ function renderBoard(level) {
             const value = grid[y][x];
             const squareImage = value === 0 ? pieceImages["square_light"] : pieceImages["square_dark"];
 
-            if (value === -1) {
-                // Draw wall
-                ctx.drawImage(pieceImages["wall"], x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            } else {
-                // Draw square using the appropriate image
-                ctx.drawImage(squareImage, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            }
+            // Draw square using the appropriate image
+            ctx.drawImage(squareImage, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
     }
 }
@@ -377,8 +368,6 @@ function undoLastMove() {
 // Modify the canvas click event to save move history
 canvas.addEventListener("click", (event) => {
     const { x, y } = getClickCoordinates(event);
-
-    if (currentLevel.isWall(x, y)) return;
 
     const pieceOnSquare = currentLevel.getPieceAt(x, y);
     if (selectedPiece && isValidMove(selectedPiece, x, y)) {
