@@ -481,7 +481,11 @@ function highlightValidMoves(piece) {
 
 // Modify handlePieceMove to clear highlights after moving
 function handlePieceMove(piece, targetX, targetY) {
-    if (!isValidMove(piece, targetX, targetY)) return;
+    if (!isValidMove(piece, targetX, targetY)) {
+        selectedPiece = null;
+        render(currentLevel);
+        return;
+    }
 
     saveMoveHistory(piece, targetX, targetY);
 
