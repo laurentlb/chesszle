@@ -130,14 +130,11 @@ function updateLevelClearedMessage() {
         // Update the bestMoves if it's null or if the current moves are fewer
         if (!currentLevelData.bestMoves || moves < currentLevelData.bestMoves) {
             currentLevelData.bestMoves = moves;
+            saveProgress(); // Save progress when the best score is updated
         }
-
-        nextLevelButton.style.display = "block"; // Show the "Next Level" button
-        nextLevelButton.disabled = false; // Enable the "Next Level" button
-        selectedPiece = null; // Deselect any selected piece
-    } else {
-        nextLevelButton.disabled = true; // Disable the "Next Level" button
     }
+
+    nextLevelButton.disabled = !levels[currentLevelIndex].bestMoves;
     updateMoveCount();
 }
 
@@ -567,6 +564,7 @@ function editor(pieces) {
 // Save the current level as compact JSON
 function editorSave() {
     const levelData = {
+        id: `level-${Date.now()}`, // Generate a unique ID using the current timestamp
         width: currentLevel.width,
         height: currentLevel.height,
         par: moveHistory.length, // Set par to the current number of moves
@@ -577,3 +575,33 @@ function editorSave() {
     console.log(formatLevelCompact(levelData));
     return JSON.stringify(levelData, null, 0); // Compact JSON
 }
+
+// Add a unique ID to each level for tracking progress
+levels.forEach((level, index) => {
+    if (!level.id) {
+        level.id = `level-${index}`; // Assign a default ID if not provided
+    }
+});
+
+// Save progress to session storage
+function saveProgress() {
+    const progress = levels.map(level => ({
+        id: level.id,
+        bestMoves: level.bestMoves
+    }));
+    sessionStorage.setItem("chesszleProgress", JSON.stringify(progress));
+}
+
+// Load progress from session storage
+function loadProgress() {
+    const progress = JSON.parse(sessionStorage.getItem("chesszleProgress")) || [];
+    progress.forEach(savedLevel => {
+        const level = levels.find(l => l.id === savedLevel.id);
+        if (level) {
+            level.bestMoves = savedLevel.bestMoves;
+        }
+    });
+}
+
+// Call loadProgress when the page loads
+loadProgress();
