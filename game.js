@@ -200,13 +200,15 @@ function render(level) {
 // Update the move count display
 function updateMoveCount() {
     moveInfo.innerHTML = `${moveHistory.length}`;
-    if (!currentLevel.bestMoves) {
+    const bestMoves = levels[currentLevelIndex].bestMoves;
+    if (!bestMoves) {
         parInfo.style.visibility = "hidden";
     } else {
         parInfo.style.visibility = "visible";
-        const best = currentLevel.bestMoves ? currentLevel.bestMoves : "--";
+        const best = bestMoves ?? "--";
         parInfo.innerHTML = `${best} / ${currentLevel.par}`;
         parInfo.title = `Best: ${best} / Par: ${currentLevel.par}`;
+        parInfo.classList.toggle("bestScore", bestMoves <= currentLevel.par);
     }
     restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
     undoButton.disabled = moveHistory.length === 0; // Enable undo only if history is not empty
