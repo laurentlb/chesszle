@@ -217,8 +217,8 @@ function isValidMove(piece, targetX, targetY) {
         return false; // Out of bounds
     }
 
-    // Check if the target square is a wall or occupied by another piece
-    if (currentLevel.grid[targetY][targetX] === -1 || currentLevel.pieces.some(p => p.x === targetX && p.y === targetY)) {
+    // Check if the target square is occupied by another piece
+    if (currentLevel.pieces.some(p => p.x === targetX && p.y === targetY && p.color === piece.color)) {
         return false;
     }
 
@@ -248,9 +248,9 @@ function isValidMove(piece, targetX, targetY) {
     // Get the squares visited during the move
     const visitedSquares = getVisitedSquares(piece, targetX, targetY);
 
-    // Check if any visited square is a wall or occupied by another piece
+    // Check if any visited square is occupied by another piece
     for (const { x, y } of visitedSquares) {
-        if (currentLevel.grid[y][x] === -1 || currentLevel.pieces.some(p => p.x === x && p.y === y)) {
+        if (currentLevel.pieces.some(p => p.x === x && p.y === y)) {
             return false;
         }
     }
@@ -379,7 +379,9 @@ canvas.addEventListener("click", (event) => {
     if (currentLevel.isWall(x, y)) return;
 
     const pieceOnSquare = currentLevel.getPieceAt(x, y);
-    if (pieceOnSquare) {
+    if (selectedPiece && isValidMove(selectedPiece, x, y)) {
+        handlePieceMove(selectedPiece, x, y);
+    } else if (pieceOnSquare) {
         if (currentTurn && pieceOnSquare.color !== currentTurn) {
             selectedPiece = null; // Deselect if the piece color doesn't match the turn
         } else if (selectedPiece === pieceOnSquare) {
@@ -389,8 +391,9 @@ canvas.addEventListener("click", (event) => {
         }
         render(currentLevel);
     } else if (selectedPiece) {
-        handlePieceMove(selectedPiece, x, y);
-    }
+        selectedPiece = null; // Deselect if clicked on an invalid square
+        render(currentLevel);
+    } 
 });
 
 // Add event listener for mousemove to update the cursor style
@@ -480,12 +483,15 @@ function handlePieceMove(piece, targetX, targetY) {
         return;
     }
 
-    if (currentTurn && piece.color !== currentTurn) {
-        alert(`It's ${currentTurn}'s turn!`);
-        return;
-    }
 
     saveMoveHistory(piece, targetX, targetY);
+
+    const targetPiece = currentLevel.getPieceAt(targetX, targetY);
+
+    // If the target square has a piece of the opposite color, remove it
+    if (targetPiece && targetPiece.color !== piece.color) {
+        currentLevel.pieces = currentLevel.pieces.filter(p => p !== targetPiece);
+    }
 
     animatePieceMove(piece, targetX, targetY, () => {
         piece.x = targetX;
@@ -521,6 +527,7 @@ function restartLevel() {
     selectedPiece = null; // Deselect any selected piece
     updateLevelClearedMessage();
     render(currentLevel); // Render the restored state
+    updateTurn(); // Reset turn after restart
 }
 
 // Show or hide the level selector modal
