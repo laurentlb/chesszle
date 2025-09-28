@@ -254,7 +254,8 @@ function animatePieceMove(piece, targetX, targetY, callback) {
     let frame = 0;
 
     function step() {
-        const progress = frame / frames;
+        let progress = frame / frames;
+        progress = progress * progress * (3.0 - 2.0 * progress);
         const currentX = startX + (endX - startX) * progress;
         const currentY = startY + (endY - startY) * progress;
 
@@ -486,17 +487,21 @@ function populateLevelList() {
     levelList.innerHTML = ""; // Clear the list
 
     levels.forEach((level, index) => {
-        const isAccessible = index === 0 || levels[index - 1].bestMoves !== null;
+        const isAccessible = index === 0 || levels[index - 1].bestMoves || levels[index].bestMoves;
 
         // Create the level card
         const levelCard = document.createElement("div");
         levelCard.className = "levelCard";
-        levelCard.style.cursor = isAccessible ? "pointer" : "not-allowed";
 
         // Highlight the current level
         if (index === currentLevelIndex) {
             levelCard.classList.add("current");
         }
+
+        // Level number
+        const levelNumber = document.createElement("h4");
+        levelNumber.textContent = `Level ${index + 1}`;
+        levelCard.appendChild(levelNumber);
 
         if (isAccessible) {
             levelCard.addEventListener("click", () => {
@@ -504,24 +509,20 @@ function populateLevelList() {
                 loadLevel(levels[currentLevelIndex]);
                 toggleLevelSelector(); // Close the modal after selecting a level
             });
+
+            // Best score and par
+            const scoreInfo = document.createElement("p");
+            scoreInfo.innerHTML = `<strong>${level.bestMoves ?? "--"}</strong> / <strong>${level.par}</strong>`;
+            if (level.bestMoves !== null && level.bestMoves <= level.par) {
+                scoreInfo.style.color = "#4caf50"; // Green for par or better
+            }
+
+            // Append elements to the card
+            levelCard.appendChild(scoreInfo);
+
         } else {
             levelCard.classList.add("disabled");
         }
-
-        // Level number
-        const levelNumber = document.createElement("h4");
-        levelNumber.textContent = `Level ${index + 1}`;
-
-        // Best score and par
-        const scoreInfo = document.createElement("p");
-        scoreInfo.innerHTML = `<strong>${level.bestMoves ?? "--"}</strong> / <strong>${level.par}</strong>`;
-        if (level.bestMoves !== null && level.bestMoves <= level.par) {
-            scoreInfo.style.color = "#4caf50"; // Green for par or better
-        }
-
-        // Append elements to the card
-        levelCard.appendChild(levelNumber);
-        levelCard.appendChild(scoreInfo);
 
         // Add the card to the grid
         levelList.appendChild(levelCard);
