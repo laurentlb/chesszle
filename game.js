@@ -1,7 +1,7 @@
 const canvas = document.getElementById("chessBoard");
 const ctx = canvas.getContext("2d");
 
-const CELL_SIZE = 50; // Size of each cell in pixels
+const CELL_SIZE = 200; // Size of each cell in pixels
 
 
 class Level {
@@ -103,8 +103,9 @@ function render(level) {
 
 // Update the move count display
 function updateMoveCount() {
-    infoContainer.innerHTML = `Moves: ${moveHistory.length} / Par: ${currentLevel.par}`;
+    moveInfo.innerHTML = `${moveHistory.length} / ${currentLevel.par}`;
     restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
+    undoButton.disabled = moveHistory.length === 0; // Enable undo only if history is not empty
 }
 
 // Function to check if the level is cleared
@@ -128,7 +129,7 @@ function updateLevelClearedMessage() {
         nextLevelButton.style.display = "block"; // Show the "Next Level" button
         nextLevelButton.disabled = false; // Enable the "Next Level" button
     } else {
-        nextLevelButton.style.display = "none"; // Hide the "Next Level" button
+        nextLevelButton.disabled = true; // Disable the "Next Level" button
     }
 }
 
@@ -205,7 +206,8 @@ function loadNextLevel() {
 
 function updateCurrentLevelDisplay() {
     const currentLevel = levels[currentLevelIndex];
-    // document.getElementById("currentLevel").textContent = `Level: ${currentLevelIndex + 1}`;
+    levelSelectorButton.textContent = `Level ${currentLevelIndex + 1}`;
+    // document.getElementById("levelInfo").textContent = `Level ${currentLevelIndex + 1}`;
 }
 
 function getVisitedSquares(piece, targetX, targetY) {
@@ -400,12 +402,6 @@ function undoLastMove() {
 
     updateMoveCount(); // Update the display
     render(currentLevel); // Render the restored state
-    updateLevelClearedMessage(); // Check if the level is cleared
-
-    // Disable the undo button if no moves are left
-    if (moveHistory.length === 0) {
-        undoButton.disabled = true;
-    }
 }
 
 // Modify the canvas click event to save move history
@@ -427,11 +423,28 @@ canvas.addEventListener("click", (event) => {
     }
 });
 
+// Add event listener for mousemove to update the cursor style
+canvas.addEventListener("mousemove", (event) => {
+    const { x, y } = getClickCoordinates(event);
+    const pieceOnSquare = currentLevel.getPieceAt(x, y);
+
+    if (pieceOnSquare) {
+        canvas.style.cursor = "pointer"; // Show clickable cursor
+    } else if (selectedPiece && isValidMove(selectedPiece, x, y)) {
+        canvas.style.cursor = "pointer"; // Show clickable cursor
+    } else {
+        canvas.style.cursor = "default"; // Default cursor
+    }
+});
+
 function getClickCoordinates(event) {
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width; // Horizontal scaling factor
+    const scaleY = canvas.height / rect.height; // Vertical scaling factor
+
     return {
-        x: Math.floor((event.clientX - rect.left) / CELL_SIZE),
-        y: Math.floor((event.clientY - rect.top) / CELL_SIZE),
+        x: Math.floor((event.clientX - rect.left) * scaleX / CELL_SIZE),
+        y: Math.floor((event.clientY - rect.top) * scaleY / CELL_SIZE),
     };
 }
 
@@ -485,7 +498,6 @@ function saveMoveHistory(piece, targetX, targetY) {
         grid: currentLevel.grid.map(row => [...row]), // Deep copy of the grid
         pieces: currentLevel.pieces.map(p => ({ ...p })) // Deep copy of all pieces
     });
-    undoButton.disabled = false; // Enable the undo button
     updateMoveCount(); // Update the move count display
 }
 
@@ -498,7 +510,7 @@ function restartLevel() {
         currentLevel.grid = firstState.grid.map(row => [...row]); // Restore the grid
         currentLevel.pieces = firstState.pieces.map(p => ({ ...p })); // Restore the pieces
     }
-    undoButton.disabled = true; // Disable the undo button
+    moveHistory = []; // Clear the move history
     selectedPiece = null; // Deselect any selected piece
     updateMoveCount(); // Update the move count display
     render(currentLevel); // Render the restored state
