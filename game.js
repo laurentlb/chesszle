@@ -103,7 +103,15 @@ function render(level) {
 
 // Update the move count display
 function updateMoveCount() {
-    moveInfo.innerHTML = `${moveHistory.length} / ${currentLevel.par}`;
+    moveInfo.innerHTML = `${moveHistory.length}`;
+    if (levels[currentLevelIndex].bestMoves === null) {
+        parInfo.style.visibility = "hidden";
+    } else {
+        parInfo.style.visibility = "visible";
+        const best = levels[currentLevelIndex].bestMoves !== null ? levels[currentLevelIndex].bestMoves : "--";
+        parInfo.innerHTML = `${best} / ${currentLevel.par}`;
+        parInfo.title = `Best: ${best} / Par: ${currentLevel.par}`;
+    }
     restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
     undoButton.disabled = moveHistory.length === 0; // Enable undo only if history is not empty
 }
@@ -128,9 +136,11 @@ function updateLevelClearedMessage() {
 
         nextLevelButton.style.display = "block"; // Show the "Next Level" button
         nextLevelButton.disabled = false; // Enable the "Next Level" button
+        selectedPiece = null; // Deselect any selected piece
     } else {
         nextLevelButton.disabled = true; // Disable the "Next Level" button
     }
+    updateMoveCount();
 }
 
 let moveHistory = []; // Store the history of moves, including grid and pieces
@@ -190,11 +200,10 @@ function loadLevel(levelData) {
     currentLevel = new Level(levelData); // Initialize currentLevel
     moveHistory = []; // Clear the undo list
     selectedPiece = null; // Deselect any selected piece
-    updateMoveCount();
-    render(currentLevel);
     updateLevelClearedMessage();
     updateCurrentLevelDisplay();
     updateLevelList(); // Update the level list display
+    render(currentLevel);
 }
 
 function loadNextLevel() {
@@ -400,7 +409,7 @@ function undoLastMove() {
     // Update selectedPiece to match the restored piece on the board
     selectedPiece = currentLevel.getPieceAt(previousX, previousY);
 
-    updateMoveCount(); // Update the display
+    updateLevelClearedMessage();
     render(currentLevel); // Render the restored state
 }
 
@@ -484,9 +493,8 @@ function handlePieceMove(piece, targetX, targetY) {
     animatePieceMove(piece, targetX, targetY, () => {
         piece.x = targetX;
         piece.y = targetY;
-        updateMoveCount();
-        render(currentLevel);
         updateLevelClearedMessage();
+        render(currentLevel);
     });
 }
 
@@ -498,7 +506,6 @@ function saveMoveHistory(piece, targetX, targetY) {
         grid: currentLevel.grid.map(row => [...row]), // Deep copy of the grid
         pieces: currentLevel.pieces.map(p => ({ ...p })) // Deep copy of all pieces
     });
-    updateMoveCount(); // Update the move count display
 }
 
 const restartButton = document.getElementById("restartButton");
@@ -512,7 +519,7 @@ function restartLevel() {
     }
     moveHistory = []; // Clear the move history
     selectedPiece = null; // Deselect any selected piece
-    updateMoveCount(); // Update the move count display
+    updateLevelClearedMessage();
     render(currentLevel); // Render the restored state
 }
 

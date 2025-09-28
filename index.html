@@ -30,6 +30,10 @@
         }
         #header span {
             font-size: 18px;
+            font-weight: bold;
+            padding: 8px;
+            border-radius: 1em;
+            background-color: #000;
         }
         #levelSelectorButton {
             padding: 5px 10px;
@@ -127,7 +131,8 @@
 </head>
 <body>
     <div id="header">
-        <span id="moveInfo">Moves: 0 / Par: 8</span>
+        <span id="moveInfo">0</span>
+        <span id="parInfo">-- / 8</span>
         <button id="levelSelectorButton">Levels</button>
     </div>
     <canvas id="chessBoard"></canvas>
