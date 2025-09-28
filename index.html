@@ -78,6 +78,14 @@
             font-size: 18px;
             color: #b0b0b0;
         }
+        #levelListContainer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #levelList {
+            list-style: none;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
@@ -90,9 +98,17 @@
     <button id="undoButton" disabled>Undo</button>
     <button id="restartButton">Restart</button>
 
+    <div id="levelInfo" style="text-align: center; margin-top: 10px;">
+        <span id="currentLevel">Level: 1</span>
+    </div>
     <canvas id="chessBoard"></canvas>
     <button id="nextLevelButton">Next Level</button>
     <div id="levelClearedMessage">Level Cleared!</div>
+
+    <div id="levelListContainer">
+        <h3>Levels</h3>
+        <ul id="levelList"></ul>
+    </div>
 
     <script src="game.js"></script>
 </body>

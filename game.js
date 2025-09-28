@@ -9,7 +9,7 @@ class Level {
         this.width = width;
         this.height = height;
         this.par = par;
-        this.grid = grid;
+        this.grid = grid.map(row => [...row]); // Deep copy of grid
         this.pieces = pieces.map(p => ({ ...p })); // Deep copy of pieces
     }
 
@@ -35,30 +35,7 @@ class Level {
     }
 }
 
-// Replace level1 with an instance of Level
-let level1 = new Level({
-    width: 8,
-    height: 8,
-    par: 8,
-    grid: [
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 0, 0, 0, 0, 0, 0, 0],
-        [1, 0, 0, 1, 1, 1, 1, 0],
-        [1, 0, 0, 1, 0, 0, 1, 0],
-        [1, 0, 0, 0, 0, 0, 1, 0],
-        [1, 1, 0, 0, 0, 1, 1, 0],
-        [0, 1, 1, 0, 1, 0, 1, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0]
-    ],
-    pieces: [
-        { type: "rook", x: 0, y: 0 },
-        { type: "rook", x: 7, y: 6 },
-        { type: "bishop", x: 2, y: 2 },
-        { type: "bishop", x: 2, y: 3 },
-        { type: "knight", x: 4, y: 4 }
-    ]
-});
-
+let currentLevel = null;
 let selectedPiece = null; // Currently selected piece
 
 // Preload images for all piece types and board squares
@@ -126,7 +103,7 @@ function render(level) {
 
 // Update the move count display
 function updateMoveCount() {
-    infoContainer.innerHTML = `Moves: ${moveHistory.length} / Par: ${level1.par}`;
+    infoContainer.innerHTML = `Moves: ${moveHistory.length} / Par: ${currentLevel.par}`;
     restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
 }
 
@@ -138,7 +115,16 @@ function isLevelCleared(level) {
 
 // Update the level cleared message
 function updateLevelClearedMessage() {
-    if (level1.isCleared()) {
+    if (currentLevel.isCleared()) {
+        const currentLevelData = levels[currentLevelIndex];
+        const moves = moveHistory.length;
+
+        // Update the bestMoves if it's null or if the current moves are fewer
+        if (currentLevelData.bestMoves === null || moves < currentLevelData.bestMoves) {
+            currentLevelData.bestMoves = moves;
+            updateLevelList();
+        }
+
         levelClearedMessage.style.display = "block"; // Show the message
         nextLevelButton.style.display = "block"; // Show the "Next Level" button
         nextLevelButton.disabled = false; // Enable the "Next Level" button
@@ -148,11 +134,80 @@ function updateLevelClearedMessage() {
     }
 }
 
+let moveHistory = []; // Store the history of moves, including grid and pieces
+
+const levels = [
+    {
+        width: 8,
+        height: 8,
+        par: 8,
+        grid: [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 1, 1, 1, 1, 0],
+            [1, 0, 0, 1, 0, 0, 1, 0],
+            [1, 0, 0, 0, 0, 0, 1, 0],
+            [1, 1, 0, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0]
+        ],
+        pieces: [
+            { type: "rook", x: 0, y: 0 },
+            { type: "rook", x: 7, y: 6 },
+            { type: "bishop", x: 2, y: 2 },
+            { type: "bishop", x: 2, y: 3 },
+            { type: "knight", x: 4, y: 4 }
+        ],
+        bestMoves: null // Track the minimum number of moves
+    },
+    {
+        width: 8,
+        height: 8,
+        par: 8,
+        grid: [
+            [1, 1, 1, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 1, 1, 1, 1, 0],
+            [1, 0, 0, 1, 0, 0, 1, 0],
+            [1, 0, 0, 0, 0, 0, 1, 0],
+            [1, 1, 0, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0]
+        ],
+        pieces: [
+            { type: "rook", x: 0, y: 0 },
+            { type: "rook", x: 7, y: 6 },
+            { type: "bishop", x: 2, y: 2 },
+            { type: "bishop", x: 2, y: 3 },
+            { type: "knight", x: 4, y: 4 }
+        ],
+        bestMoves: null // Track the minimum number of moves
+    }
+];
+
+let currentLevelIndex = 0;
+
 function loadLevel(levelData) {
-    level1 = new Level(levelData); // Create a new Level instance
+    currentLevel = new Level(levelData); // Initialize currentLevel
+    moveHistory = []; // Clear the undo list
+    selectedPiece = null; // Deselect any selected piece
     updateMoveCount();
-    render(level1);
+    render(currentLevel);
     updateLevelClearedMessage();
+    updateCurrentLevelDisplay();
+    updateLevelList(); // Update the level list display
+}
+
+function loadNextLevel() {
+    if (currentLevelIndex < levels.length - 1) {
+        currentLevelIndex++;
+        loadLevel(levels[currentLevelIndex]);
+    }
+}
+
+function updateCurrentLevelDisplay() {
+    const currentLevel = levels[currentLevelIndex];
+    document.getElementById("currentLevel").textContent = `Level: ${currentLevelIndex + 1}`;
 }
 
 function getVisitedSquares(piece, targetX, targetY) {
@@ -192,12 +247,12 @@ function getVisitedSquares(piece, targetX, targetY) {
 }
 
 function isValidMove(piece, targetX, targetY) {
-    if (targetX < 0 || targetX >= level1.width || targetY < 0 || targetY >= level1.height) {
+    if (targetX < 0 || targetX >= currentLevel.width || targetY < 0 || targetY >= currentLevel.height) {
         return false; // Out of bounds
     }
 
     // Check if the target square is a wall or occupied by another piece
-    if (level1.grid[targetY][targetX] === -1 || level1.pieces.some(p => p.x === targetX && p.y === targetY)) {
+    if (currentLevel.grid[targetY][targetX] === -1 || currentLevel.pieces.some(p => p.x === targetX && p.y === targetY)) {
         return false;
     }
 
@@ -229,7 +284,7 @@ function isValidMove(piece, targetX, targetY) {
 
     // Check if any visited square is a wall or occupied by another piece
     for (const { x, y } of visitedSquares) {
-        if (level1.grid[y][x] === -1 || level1.pieces.some(p => p.x === x && p.y === y)) {
+        if (currentLevel.grid[y][x] === -1 || currentLevel.pieces.some(p => p.x === x && p.y === y)) {
             return false;
         }
     }
@@ -252,8 +307,8 @@ function animatePieceMove(piece, targetX, targetY, callback) {
         const currentY = startY + (endY - startY) * progress;
 
         // Clear the board and redraw everything except the moving piece
-        renderBoard(level1);
-        level1.pieces.forEach(p => {
+        renderBoard(currentLevel);
+        currentLevel.pieces.forEach(p => {
             if (p !== piece) {
                 drawPiece(p, p.x, p.y);
             }
@@ -284,7 +339,7 @@ function animatePieceMove(piece, targetX, targetY, callback) {
 
 // Update the color of the squares the piece moved through
 function updateColor(x, y) {
-    level1.updateGrid(x, y);
+    currentLevel.updateGrid(x, y);
 }
 
 function updatePathColors(piece, targetX, targetY) {
@@ -293,30 +348,6 @@ function updatePathColors(piece, targetX, targetY) {
         updateColor(x, y);
     });
 }
-
-// Example level
-level1 = new Level({
-    width: 8,
-    height: 8,
-    par: 8,
-    grid: [
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 0, 0, 0, 0, 0, 0, 0],
-        [1, 0, 0, 1, 1, 1, 1, 0],
-        [1, 0, 0, 1, 0, 0, 1, 0],
-        [1, 0, 0, 0, 0, 0, 1, 0],
-        [1, 1, 0, 0, 0, 1, 1, 0],
-        [0, 1, 1, 0, 1, 0, 1, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0]
-    ],
-    pieces: [
-        { type: "rook", x: 0, y: 0 },
-        { type: "rook", x: 7, y: 6 },
-        { type: "bishop", x: 2, y: 2 },
-        { type: "bishop", x: 2, y: 3 },
-        { type: "knight", x: 4, y: 4 }
-    ]
-});
 
 // Wait until images are loaded before loading the level
 Promise.all(Object.values(pieceImages).map(img => { 
@@ -329,7 +360,7 @@ Promise.all(Object.values(pieceImages).map(img => {
         }
     });
 })).then(() => {
-    loadLevel(level1); // Load the initial level
+    loadLevel(levels[currentLevelIndex]); // Load the initial level
 });
 
 function formatLevelCompact(level) {
@@ -355,8 +386,6 @@ document.getElementById("loadLevelButton").addEventListener("click", () => {
 });
 */
 
-let moveHistory = []; // Store the history of moves, including grid and pieces
-
 // Function to undo the last move
 function undoLastMove() {
     if (moveHistory.length === 0) return;
@@ -365,14 +394,14 @@ function undoLastMove() {
     const { piece, previousX, previousY, grid, pieces } = lastMove;
 
     // Restore the grid and pieces
-    level1.grid = grid.map(row => [...row]); // Deep copy of the grid
-    level1.pieces = pieces.map(p => ({ ...p })); // Deep copy of all pieces
+    currentLevel.grid = grid.map(row => [...row]); // Deep copy of the grid
+    currentLevel.pieces = pieces.map(p => ({ ...p })); // Deep copy of all pieces
 
     // Update selectedPiece to match the restored piece on the board
-    selectedPiece = level1.getPieceAt(previousX, previousY);
+    selectedPiece = currentLevel.getPieceAt(previousX, previousY);
 
     updateMoveCount(); // Update the display
-    render(level1); // Render the restored state
+    render(currentLevel); // Render the restored state
     updateLevelClearedMessage(); // Check if the level is cleared
 
     // Disable the undo button if no moves are left
@@ -385,16 +414,16 @@ function undoLastMove() {
 canvas.addEventListener("click", (event) => {
     const { x, y } = getClickCoordinates(event);
 
-    if (level1.isWall(x, y)) return;
+    if (currentLevel.isWall(x, y)) return;
 
-    const pieceOnSquare = level1.getPieceAt(x, y);
+    const pieceOnSquare = currentLevel.getPieceAt(x, y);
     if (pieceOnSquare) {
         if (selectedPiece === pieceOnSquare) {
             selectedPiece = null; // Deselect if the same piece is clicked
         } else {
             selectedPiece = pieceOnSquare;
         }
-        render(level1);
+        render(currentLevel);
     } else if (selectedPiece) {
         handlePieceMove(selectedPiece, x, y);
     }
@@ -410,8 +439,8 @@ function getClickCoordinates(event) {
 
 function highlightValidMoves(piece) {
     const validMoves = [];
-    for (let y = 0; y < level1.height; y++) {
-        for (let x = 0; x < level1.width; x++) {
+    for (let y = 0; y < currentLevel.height; y++) {
+        for (let x = 0; x < currentLevel.width; x++) {
             if (isValidMove(piece, x, y)) {
                 validMoves.push({ x, y });
             }
@@ -424,7 +453,7 @@ function highlightValidMoves(piece) {
         const centerY = y * CELL_SIZE + CELL_SIZE / 2;
         const radius = CELL_SIZE / 6;
 
-        if (level1.grid[y][x] === 1) {
+        if (currentLevel.grid[y][x] === 1) {
             ctx.fillStyle = "rgba(54, 135, 107, 0.8)"; // Semi-transparent green
         } else {
             ctx.fillStyle = "rgba(90, 129, 121, 0.8)"; // Semi-transparent green
@@ -445,7 +474,7 @@ function handlePieceMove(piece, targetX, targetY) {
         piece.x = targetX;
         piece.y = targetY;
         updateMoveCount();
-        render(level1);
+        render(currentLevel);
         updateLevelClearedMessage();
     });
 }
@@ -455,8 +484,8 @@ function saveMoveHistory(piece, targetX, targetY) {
         piece,
         previousX: piece.x,
         previousY: piece.y,
-        grid: level1.grid.map(row => [...row]), // Deep copy of the grid
-        pieces: level1.pieces.map(p => ({ ...p })) // Deep copy of all pieces
+        grid: currentLevel.grid.map(row => [...row]), // Deep copy of the grid
+        pieces: currentLevel.pieces.map(p => ({ ...p })) // Deep copy of all pieces
     });
     undoButton.disabled = false; // Enable the undo button
     updateMoveCount(); // Update the move count display
@@ -468,40 +497,57 @@ const nextLevelButton = document.getElementById("nextLevelButton");
 function restartLevel() {
     if (moveHistory.length > 0) {
         const firstState = moveHistory[0]; // Get the initial state
-        level1.grid = firstState.grid.map(row => [...row]); // Restore the grid
-        level1.pieces = firstState.pieces.map(p => ({ ...p })); // Restore the pieces
+        currentLevel.grid = firstState.grid.map(row => [...row]); // Restore the grid
+        currentLevel.pieces = firstState.pieces.map(p => ({ ...p })); // Restore the pieces
     }
-    moveHistory = []; // Clear the undo list
     undoButton.disabled = true; // Disable the undo button
     selectedPiece = null; // Deselect any selected piece
     updateMoveCount(); // Update the move count display
-    render(level1); // Render the restored state
+    render(currentLevel); // Render the restored state
 }
 
 function loadNextLevel() {
-    // Example: Load a new level (replace with actual logic for next levels)
-    const nextLevel = {
-        width: 8,
-        height: 8,
-        par: 10,
-        grid: [
-            [1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 1, 1, 1, 1, 1, 1, 1],
-            [0, 1, 1, 0, 0, 0, 1, 1],
-            [0, 1, 1, 0, 1, 0, 1, 1],
-            [0, 1, 1, 1, 1, 0, 1, 1],
-            [0, 0, 1, 1, 1, 1, 0, 1],
-            [1, 0, 0, 1, 0, 0, 0, 1],
-            [1, 1, 1, 0, 1, 1, 1, 1]
-        ],
-        pieces: [
-            { type: "rook", x: 0, y: 0 },
-            { type: "bishop", x: 3, y: 3 },
-            { type: "knight", x: 5, y: 5 }
-        ]
-    };
-    nextLevelButton.style.display = "none"; // Hide the "Next Level" button
-    loadLevel(nextLevel);
+    if (currentLevelIndex < levels.length - 1) {
+        currentLevelIndex++;
+        loadLevel(levels[currentLevelIndex]);
+    }
+}
+
+function updateLevelList() {
+    const levelList = document.getElementById("levelList");
+    levelList.innerHTML = ""; // Clear the list
+
+    levels.forEach((level, index) => {
+        const isAccessible = index === 0 || levels[index - 1].bestMoves !== null;
+        const listItem = document.createElement("li");
+        listItem.style.margin = "10px 0";
+
+        const levelButton = document.createElement("button");
+        levelButton.textContent = `Level ${index + 1} - Best: ${level.bestMoves ?? "--"} / Par: ${level.par}`;
+        levelButton.disabled = !isAccessible;
+        levelButton.style.cursor = isAccessible ? "pointer" : "not-allowed";
+        levelButton.style.backgroundColor = isAccessible ? "#007acc" : "#555";
+        levelButton.style.color = "#ffffff";
+        levelButton.style.border = "none";
+        levelButton.style.padding = "10px 20px";
+        levelButton.style.borderRadius = "5px";
+
+        // Highlight if the best score is less than or equal to the par
+        if (level.bestMoves !== null && level.bestMoves <= level.par) {
+            levelButton.style.fontWeight = "bold";
+            levelButton.style.backgroundColor = "#4caf50"; // Green for par or better
+        }
+
+        levelButton.addEventListener("click", () => {
+            if (isAccessible) {
+                currentLevelIndex = index;
+                loadLevel(levels[currentLevelIndex]);
+            }
+        });
+
+        listItem.appendChild(levelButton);
+        levelList.appendChild(listItem);
+    });
 }
 
 // Attach event listeners to the buttons
@@ -509,3 +555,6 @@ restartButton.addEventListener("click", restartLevel);
 nextLevelButton.addEventListener("click", loadNextLevel);
 // Attach the undo button click event
 undoButton.addEventListener("click", undoLastMove);
+
+// Initialize the first level
+loadLevel(levels[currentLevelIndex]);
