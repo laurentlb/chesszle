@@ -1,4 +1,7 @@
 const canvas = document.getElementById("chessBoard");
+const nextLevelButton = document.getElementById("nextLevelButton");
+const levelSelectorButton = document.getElementById("levelSelectorButton");
+const modalOverlay = document.getElementById("modalOverlay");
 const ctx = canvas.getContext("2d");
 
 const CELL_SIZE = 200; // Size of each cell in pixels
@@ -35,11 +38,59 @@ class Level {
         const firstValue = this.grid[0][0];
         return this.grid.every(row => row.every(cell => cell === firstValue));
     }
+
+    isValidMove(piece, targetX, targetY) {
+        if (targetX < 0 || targetX >= currentLevel.width || targetY < 0 || targetY >= currentLevel.height) {
+            return false; // Out of bounds
+        }
+
+        // Check if the target square is occupied by another piece
+        if (currentLevel.pieces.some(p => p.x === targetX && p.y === targetY && p.color === piece.color)) {
+            return false;
+        }
+
+        const dx = Math.abs(targetX - piece.x);
+        const dy = Math.abs(targetY - piece.y);
+
+        // Check if the move is valid based on the piece type
+        let valid = false;
+        switch (piece.type) {
+            case "rook":
+                valid = dx === 0 || dy === 0; // Rook moves in straight lines
+                break;
+            case "bishop":
+                valid = dx === dy; // Bishop moves diagonally
+                break;
+            case "knight":
+                valid = (dx === 2 && dy === 1) || (dx === 1 && dy === 2); // Knight moves in "L" shape
+                break;
+            default:
+                return false;
+        }
+
+        if (!valid) {
+            return false;
+        }
+
+        // Get the squares visited during the move
+        const visitedSquares = getVisitedSquares(piece, targetX, targetY);
+
+        // Check if any visited square is occupied by another piece
+        for (const { x, y } of visitedSquares) {
+            if (currentLevel.pieces.some(p => p.x === x && p.y === y)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 let currentLevel = null;
 let selectedPiece = null; // Currently selected piece
 let currentTurn = "white"; // White starts the game
+let moveHistory = []; // Store the history of moves, including grid and pieces
+let currentLevelIndex = 0;
 
 // Preload images for all piece types and board squares
 function preloadImages() {
@@ -88,31 +139,29 @@ function drawPiece(piece, x, y) {
     ctx.drawImage(img, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
-function renderPieces(level) {
-    const { pieces } = level;
-
-    pieces.forEach(piece => {
-        drawPiece(piece, piece.x, piece.y);
-    });
-}
-
 function render(level) {
     renderBoard(level);
-    renderPieces(level);
+    level.pieces.forEach(piece => {
+        drawPiece(piece, piece.x, piece.y);
+    });
+
     updateTurn();
+    updateMoveCount();
+
     if (selectedPiece) {
         highlightValidMoves(selectedPiece);
     }
+    nextLevelButton.disabled = !currentLevel.bestMoves;
 }
 
 // Update the move count display
 function updateMoveCount() {
     moveInfo.innerHTML = `${moveHistory.length}`;
-    if (!levels[currentLevelIndex].bestMoves) {
+    if (!currentLevel.bestMoves) {
         parInfo.style.visibility = "hidden";
     } else {
         parInfo.style.visibility = "visible";
-        const best = levels[currentLevelIndex].bestMoves ? levels[currentLevelIndex].bestMoves : "--";
+        const best = currentLevel.bestMoves ? currentLevel.bestMoves : "--";
         parInfo.innerHTML = `${best} / ${currentLevel.par}`;
         parInfo.title = `Best: ${best} / Par: ${currentLevel.par}`;
     }
@@ -120,16 +169,10 @@ function updateMoveCount() {
     undoButton.disabled = moveHistory.length === 0; // Enable undo only if history is not empty
 }
 
-// Function to check if the level is cleared
-function isLevelCleared(level) {
-    const firstValue = level.grid[0][0];
-    return level.grid.every(row => row.every(cell => cell === firstValue));
-}
-
 // Update the level cleared message
-function updateLevelClearedMessage() {
+function checkVictory() {
     if (currentLevel.isCleared()) {
-        const currentLevelData = levels[currentLevelIndex];
+        const currentLevelData = currentLevel;
         const moves = moveHistory.length;
 
         // Update the bestMoves if it's null or if the current moves are fewer
@@ -139,19 +182,12 @@ function updateLevelClearedMessage() {
         }
         selectedPiece = null; // Deselect any selected piece
     }
-
-    nextLevelButton.disabled = !levels[currentLevelIndex].bestMoves;
-    updateMoveCount();
 }
-
-let moveHistory = []; // Store the history of moves, including grid and pieces
-let currentLevelIndex = 0;
 
 function loadLevel(levelData) {
     currentLevel = new Level(levelData); // Initialize currentLevel
     moveHistory = []; // Clear the undo list
     selectedPiece = null; // Deselect any selected piece
-    updateLevelClearedMessage();
     updateCurrentLevelDisplay();
     render(currentLevel);
 }
@@ -205,52 +241,6 @@ function getVisitedSquares(piece, targetX, targetY) {
     return visited;
 }
 
-function isValidMove(piece, targetX, targetY) {
-    if (targetX < 0 || targetX >= currentLevel.width || targetY < 0 || targetY >= currentLevel.height) {
-        return false; // Out of bounds
-    }
-
-    // Check if the target square is occupied by another piece
-    if (currentLevel.pieces.some(p => p.x === targetX && p.y === targetY && p.color === piece.color)) {
-        return false;
-    }
-
-    const dx = Math.abs(targetX - piece.x);
-    const dy = Math.abs(targetY - piece.y);
-
-    // Check if the move is valid based on the piece type
-    let valid = false;
-    switch (piece.type) {
-        case "rook":
-            valid = dx === 0 || dy === 0; // Rook moves in straight lines
-            break;
-        case "bishop":
-            valid = dx === dy; // Bishop moves diagonally
-            break;
-        case "knight":
-            valid = (dx === 2 && dy === 1) || (dx === 1 && dy === 2); // Knight moves in "L" shape
-            break;
-        default:
-            return false;
-    }
-
-    if (!valid) {
-        return false;
-    }
-
-    // Get the squares visited during the move
-    const visitedSquares = getVisitedSquares(piece, targetX, targetY);
-
-    // Check if any visited square is occupied by another piece
-    for (const { x, y } of visitedSquares) {
-        if (currentLevel.pieces.some(p => p.x === x && p.y === y)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 function animatePieceMove(piece, targetX, targetY, callback) {
     const startX = piece.x * CELL_SIZE;
     const startY = piece.y * CELL_SIZE;
@@ -281,15 +271,6 @@ function animatePieceMove(piece, targetX, targetY, callback) {
         if (frame <= frames) {
             requestAnimationFrame(step);
         } else {
-            // Update the color of the squares the piece moved through
-            if (piece.type === "rook" || piece.type === "bishop") {
-                updatePathColors(piece, targetX, targetY);
-            }
-
-            piece.x = targetX;
-            piece.y = targetY;
-            updateColor(targetX, targetY, piece.color);
-
             callback();
         }
     }
@@ -297,15 +278,10 @@ function animatePieceMove(piece, targetX, targetY, callback) {
     step();
 }
 
-// Update the color of the squares the piece moved through
-function updateColor(x, y) {
-    currentLevel.updateGrid(x, y);
-}
-
 function updatePathColors(piece, targetX, targetY) {
     const visitedSquares = getVisitedSquares(piece, targetX, targetY);
     visitedSquares.forEach(({ x, y }) => {
-        updateColor(x, y);
+        currentLevel.updateGrid(x, y);
     });
 }
 
@@ -348,10 +324,12 @@ document.getElementById("loadLevelButton").addEventListener("click", () => {
 
 // Function to undo the last move
 function undoLastMove() {
-    if (moveHistory.length === 0) return;
+    if (moveHistory.length === 0) {
+        return;
+    }
 
     const lastMove = moveHistory.pop();
-    const { piece, previousX, previousY, grid, pieces } = lastMove;
+    const { previousX, previousY, grid, pieces } = lastMove;
 
     // Restore the grid and pieces
     currentLevel.grid = grid.map(row => [...row]); // Deep copy of the grid
@@ -360,9 +338,7 @@ function undoLastMove() {
     // Update selectedPiece to match the restored piece on the board
     selectedPiece = currentLevel.getPieceAt(previousX, previousY);
 
-    updateLevelClearedMessage();
     render(currentLevel); // Render the restored state
-    updateTurn(); // Update turn after undo
 }
 
 // Modify the canvas click event to save move history
@@ -370,7 +346,7 @@ canvas.addEventListener("click", (event) => {
     const { x, y } = getClickCoordinates(event);
 
     const pieceOnSquare = currentLevel.getPieceAt(x, y);
-    if (selectedPiece && isValidMove(selectedPiece, x, y)) {
+    if (selectedPiece && currentLevel.isValidMove(selectedPiece, x, y)) {
         handlePieceMove(selectedPiece, x, y);
     } else if (pieceOnSquare) {
         if (currentTurn && pieceOnSquare.color !== currentTurn) {
@@ -384,7 +360,7 @@ canvas.addEventListener("click", (event) => {
     } else if (selectedPiece) {
         selectedPiece = null; // Deselect if clicked on an invalid square
         render(currentLevel);
-    } 
+    }
 });
 
 // Add event listener for mousemove to update the cursor style
@@ -394,7 +370,7 @@ canvas.addEventListener("mousemove", (event) => {
 
     if (pieceOnSquare) {
         canvas.style.cursor = "pointer"; // Show clickable cursor
-    } else if (selectedPiece && isValidMove(selectedPiece, x, y)) {
+    } else if (selectedPiece && currentLevel.isValidMove(selectedPiece, x, y)) {
         canvas.style.cursor = "pointer"; // Show clickable cursor
     } else {
         canvas.style.cursor = "default"; // Default cursor
@@ -416,7 +392,7 @@ function highlightValidMoves(piece) {
     const validMoves = [];
     for (let y = 0; y < currentLevel.height; y++) {
         for (let x = 0; x < currentLevel.width; x++) {
-            if (isValidMove(piece, x, y)) {
+            if (currentLevel.isValidMove(piece, x, y)) {
                 validMoves.push({ x, y });
             }
         }
@@ -468,14 +444,13 @@ function updateTurnDisplay() {
 
 // Modify handlePieceMove to clear highlights after moving
 function handlePieceMove(piece, targetX, targetY) {
-    if (!isValidMove(piece, targetX, targetY)) {
+    if (!currentLevel.isValidMove(piece, targetX, targetY)) {
         selectedPiece = null;
         render(currentLevel);
         return;
     }
 
-
-    saveMoveHistory(piece, targetX, targetY);
+    saveMoveHistory(piece);
 
     const targetPiece = currentLevel.getPieceAt(targetX, targetY);
 
@@ -485,16 +460,22 @@ function handlePieceMove(piece, targetX, targetY) {
     }
 
     animatePieceMove(piece, targetX, targetY, () => {
+        // Update the color of the squares the piece moved through
+        if (piece.type === "rook" || piece.type === "bishop") {
+            updatePathColors(piece, targetX, targetY);
+        }
+
+        currentLevel.updateGrid(targetX, targetY);
+
         piece.x = targetX;
         piece.y = targetY;
-        updateLevelClearedMessage();
+        checkVictory();
         render(currentLevel);
     });
 }
 
-function saveMoveHistory(piece, targetX, targetY) {
+function saveMoveHistory(piece) {
     moveHistory.push({
-        piece,
         previousX: piece.x,
         previousY: piece.y,
         grid: currentLevel.grid.map(row => [...row]), // Deep copy of the grid
@@ -502,35 +483,24 @@ function saveMoveHistory(piece, targetX, targetY) {
     });
 }
 
-const restartButton = document.getElementById("restartButton");
-const nextLevelButton = document.getElementById("nextLevelButton");
-const levelSelectorButton = document.getElementById("levelSelectorButton");
-const levelSelectorModal = document.getElementById("levelSelectorModal");
-const modalOverlay = document.getElementById("modalOverlay");
-
 function restartLevel() {
     if (moveHistory.length > 0) {
         const firstState = moveHistory[0]; // Get the initial state
         currentLevel.grid = firstState.grid.map(row => [...row]); // Restore the grid
         currentLevel.pieces = firstState.pieces.map(p => ({ ...p })); // Restore the pieces
     }
-    moveHistory = []; // Clear the move history
-    selectedPiece = null; // Deselect any selected piece
-    updateLevelClearedMessage();
-    render(currentLevel); // Render the restored state
-    updateTurn(); // Reset turn after restart
+    loadLevel(currentLevel); // Reload the current level to reset state
 }
 
 // Show or hide the level selector modal
 function toggleModal(modalId, show) {
     const modal = document.getElementById(modalId);
-    const overlay = document.getElementById("modalOverlay");
     if (show) {
         modal.style.display = "block";
-        overlay.style.display = "block";
+        modalOverlay.style.display = "block";
     } else {
         modal.style.display = "none";
-        overlay.style.display = "none";
+        modalOverlay.style.display = "none";
     }
 }
 
@@ -653,5 +623,5 @@ modalOverlay.addEventListener("click", () => {
     toggleModal("congratulationsPopup", false);
 });
 undoButton.addEventListener("click", undoLastMove);
-restartButton.addEventListener("click", restartLevel);
+document.getElementById("restartButton").addEventListener("click", restartLevel);
 nextLevelButton.addEventListener("click", loadNextLevel);
