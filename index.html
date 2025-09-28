@@ -27,9 +27,9 @@
             align-items: center;
             margin: 10px 0;
             width: 100%;
+            font-size: 16px;
         }
         #header span {
-            font-size: 18px;
             font-weight: bold;
             padding: 8px;
             border-radius: 1em;
@@ -37,7 +37,6 @@
         }
         #levelSelectorButton {
             padding: 5px 10px;
-            font-size: 14px;
         }
         canvas {
             border: 2px solid #000;
@@ -75,21 +74,21 @@
             text-align: center;
             margin: 10px 0;
         }
-        #levelSelectorModal {
+        #levelSelectorModal, #congratulationsPopup {
             display: none;
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: #1e1e1e;
-            border: 1px solid #444;
+            border: 4px solid #000;
             border-radius: 8px;
             padding: 20px;
             width: 80%;
             max-width: 400px;
             z-index: 1000;
         }
-        #levelSelectorModal h3 {
+        #levelSelectorModal h3, #congratulationsPopup h3 {
             margin-top: 0;
         }
         #levelList {
@@ -125,12 +124,20 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
             z-index: 999;
         }
         #display-message {
             margin: 0 0 1em 0;
             text-align: center;
             font-weight: bold;
+        }
+        a {
+            color: #1e90ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -152,9 +159,18 @@
     </p>
 
     <div id="modalOverlay"></div>
-    <div id="levelSelectorModal">
+    <div id="levelSelectorModal" class="modal">
         <h3>Select a Level</h3>
         <div id="levelList"></div>
+    </div>
+    <div id="congratulationsPopup" class="modal" style="display: none;">
+        <h3>Congratulations!</h3>
+        <p>You have completed all the levels.</p>
+        <p>
+            To give feedback or create new levels, visit the <a href="https://github.com/laurentlb/chesszle">GitHub repository</a>.
+            More levels might be added in the future.
+        </p>
+        <button onclick="toggleModal('congratulationsPopup', false)">Close</button>
     </div>
 
     <script src="levels.js"></script>

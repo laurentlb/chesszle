@@ -169,6 +169,8 @@ function loadNextLevel() {
     if (currentLevelIndex < levels.length - 1) {
         currentLevelIndex++;
         loadLevel(levels[currentLevelIndex]);
+    } else {
+        toggleModal("congratulationsPopup", true); // Show the popup if it's the last level
     }
 }
 
@@ -531,10 +533,16 @@ function restartLevel() {
 }
 
 // Show or hide the level selector modal
-function toggleLevelSelector() {
-    const isVisible = levelSelectorModal.style.display === "block";
-    levelSelectorModal.style.display = isVisible ? "none" : "block";
-    modalOverlay.style.display = isVisible ? "none" : "block";
+function toggleModal(modalId, show) {
+    const modal = document.getElementById(modalId);
+    const overlay = document.getElementById("modalOverlay");
+    if (show) {
+        modal.style.display = "block";
+        overlay.style.display = "block";
+    } else {
+        modal.style.display = "none";
+        overlay.style.display = "none";
+    }
 }
 
 // Populate the level list in the modal
@@ -563,7 +571,7 @@ function populateLevelList() {
             levelCard.addEventListener("click", () => {
                 currentLevelIndex = index;
                 loadLevel(levels[currentLevelIndex]);
-                toggleLevelSelector(); // Close the modal after selecting a level
+                toggleModal("levelSelectorModal", false); // Close the modal after selecting a level
             });
 
             // Best score and par
@@ -648,10 +656,13 @@ loadLevel(levels[currentLevelIndex]);
 // Event listeners
 levelSelectorButton.addEventListener("click", () => {
     populateLevelList();
-    toggleLevelSelector();
+    toggleModal("levelSelectorModal", true);
 });
 
-modalOverlay.addEventListener("click", toggleLevelSelector);
+modalOverlay.addEventListener("click", () => {
+    toggleModal("levelSelectorModal", false);
+    toggleModal("congratulationsPopup", false);
+});
 undoButton.addEventListener("click", undoLastMove);
 restartButton.addEventListener("click", restartLevel);
 nextLevelButton.addEventListener("click", loadNextLevel);
