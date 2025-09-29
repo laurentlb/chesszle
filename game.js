@@ -231,7 +231,6 @@ function checkVictory() {
 
 function loadLevel(levelData) {
     currentLevel = new Level(levelData); // Initialize currentLevel
-    console.log("Loaded level:", currentLevel);
     moveHistory = []; // Clear the undo list
     selectedPiece = null; // Deselect any selected piece
     levelSelectorButton.textContent = `Level ${currentLevelIndex + 1}`;
@@ -586,6 +585,11 @@ function loadProgress() {
             level.bestMoves = savedLevel.bestMoves;
         }
     });
+    // find the first incomplete level
+    currentLevelIndex = levels.findIndex(level => !level.bestMoves);
+    if (currentLevelIndex === -1) {
+        currentLevelIndex = levels.length - 1; // All levels completed, stay on the last level
+    }
 }
 
 // Call loadProgress when the page loads
