@@ -588,12 +588,12 @@ function saveProgress() {
         id: level.id,
         bestMoves: level.bestMoves
     }));
-    sessionStorage.setItem("chesszleProgress", JSON.stringify(progress));
+    localStorage.setItem("chesszleProgress", JSON.stringify(progress));
 }
 
 // Load progress from session storage
 function loadProgress() {
-    const progress = JSON.parse(sessionStorage.getItem("chesszleProgress")) || [];
+    const progress = JSON.parse(localStorage.getItem("chesszleProgress")) || [];
     progress.forEach(savedLevel => {
         const level = levels.find(l => l.id === savedLevel.id);
         if (level) {
