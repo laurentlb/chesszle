@@ -199,17 +199,20 @@ function render(level) {
 
 // Update the move count display
 function updateMoveCount() {
-    moveInfo.innerHTML = `${moveHistory.length}`;
     const bestMoves = levels[currentLevelIndex].bestMoves;
-    if (!bestMoves) {
-        parInfo.style.visibility = "hidden";
+
+    if (bestMoves) {
+        parInfo.innerHTML = `${moveHistory.length} (${bestMoves})`;
+        parInfo.title = `${moveHistory.length} moves (best score: ${bestMoves})`;
     } else {
-        parInfo.style.visibility = "visible";
-        const best = bestMoves ?? "--";
-        parInfo.innerHTML = `${best} / ${currentLevel.par}`;
-        parInfo.title = `Best: ${best} / Par: ${currentLevel.par}`;
-        parInfo.classList.toggle("bestScore", bestMoves <= currentLevel.par);
+        parInfo.innerHTML = `${moveHistory.length}`;
+        parInfo.title = `${moveHistory.length} moves`;
     }
+
+    const isPerfect = !!(bestMoves && bestMoves <= levels[currentLevelIndex].par);
+    document.getElementById("perfectScore").style.display = isPerfect ? "block" : "none";
+    parInfo.classList.toggle("bestScore", isPerfect);
+
     restartButton.disabled = moveHistory.length === 0; // Enable restart only if history is not empty
     undoButton.disabled = moveHistory.length === 0; // Enable undo only if history is not empty
 }
@@ -503,8 +506,9 @@ function populateLevelList() {
         }
 
         // Level number
-        const levelNumber = document.createElement("h4");
-        levelNumber.textContent = `Level ${index + 1}`;
+        const levelNumber = document.createElement("div");
+        levelNumber.className = "levelNumber";
+        levelNumber.textContent = `${index + 1}`;
         levelCard.appendChild(levelNumber);
 
         if (isAccessible) {
@@ -514,11 +518,16 @@ function populateLevelList() {
                 toggleModal("levelSelectorModal", false); // Close the modal after selecting a level
             });
 
-            // Best score and par
-            const scoreInfo = document.createElement("p");
-            scoreInfo.innerHTML = `<strong>${level.bestMoves ?? "--"}</strong> / <strong>${level.par}</strong>`;
+            // Best score
+            const scoreInfo = document.createElement("div");
+            scoreInfo.className = "score";
+            scoreInfo.textContent = `${level.bestMoves ?? "--"}`;
             if (level.bestMoves !== null && level.bestMoves <= level.par) {
-                scoreInfo.style.color = "#4caf50"; // Green for par or better
+                const star = document.createElement("div");
+                star.textContent = "★";
+                star.classList.add("perfect");
+                levelCard.appendChild(star);
+                levelCard.classList.add("bestScore");
             }
 
             // Append elements to the card

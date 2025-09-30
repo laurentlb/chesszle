@@ -31,14 +31,15 @@
             width: 100%;
             font-size: 16px;
         }
-        #header span {
+        #header #parInfo {
+            border: 1px solid #aaa;
+            border-radius: 8px;
             font-weight: bold;
             padding: 8px;
-            border-radius: 4px;
-            background-color: #000;
+            background-color: #0a2a3f;
         }
-        #header span#parInfo.bestScore {
-            background-color: #277e2a;
+        #header #parInfo.bestScore, .levelCard.bestScore {
+            background-color: #1e4763;
         }
         #levelSelectorButton {
             padding: 5px 10px;
@@ -114,9 +115,38 @@
             text-align: center;
             cursor: pointer;
             transition: transform 0.2s;
+            position: relative;
+            height: 70px;
+
+            .levelNumber {
+                font-size: 18px;
+                position: absolute;
+                top: 4px;
+                left: 4px;
         }
+
+            .score {
+                height: 100%;
+                align-content: center;
+                font-size: 2em;
+            }
+        }
+            .perfect {
+                font-size: 32px;
+                line-height: 32px;
+                color: gold;
+                text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+                position: absolute;
+                top: 4px;
+                right: 4px;
+            }
+        #header .perfect {
+            top: -20px;
+            right: -14px;
+        }
+
         .levelCard:hover {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
         .levelCard.current {
             border: 2px solid #4caf50;
@@ -153,8 +183,10 @@
 </head>
 <body>
     <div id="header">
-        <span id="moveInfo" title="Number of moves">0</span>
+        <div style="position: relative;">
         <span id="parInfo">-- / 8</span>
+            <div id="perfectScore" class="perfect" title="Perfect score">★</div>
+        </div>
         <button id="levelSelectorButton">Levels</button>
     </div>
     <canvas id="chessBoard"></canvas>
