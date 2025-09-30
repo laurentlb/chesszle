@@ -416,14 +416,20 @@ function updateTurn() {
         selectedPiece = null; // Deselect if the piece color doesn't match the turn
     }
 
+    canvas.style.filter = "";
+
     const display = document.getElementById("display-message");
     if (currentLevel.isCleared()) {
         display.textContent = "Level Cleared!";
+        canvas.style.filter = "sepia(1) brightness(0.5)";
+        if (moveHistory.length === levels[currentLevelIndex].par) {
+            display.textContent += " Perfect Score!";
+        }
         return;
     }
     display.textContent = currentTurn
         ? `${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} to play.`
-        : "";
+        : "\u00A0";
 }
 
 // Modify handlePieceMove to clear highlights after moving
