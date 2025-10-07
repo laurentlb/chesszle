@@ -607,6 +607,27 @@ function loadProgress() {
     }
 }
 
+// Function to generate a sharable progress string
+function generateProgressString() {
+    const totalLevels = levels.length;
+    const completedLevels = levels.filter(level => level.bestMoves).length;
+    const optimalLevels = levels.filter(level => level.bestMoves && level.bestMoves <= level.par).length;
+
+    const progression = levels.map(level => {
+        if (level.bestMoves && level.bestMoves <= level.par) {
+            return "⭐"; // Optimal
+        } else if (level.bestMoves) {
+            return "✅"; // Completed
+        } else {
+            return "❓"; // Unfinished
+        }
+    }).join("");
+
+    return `Chesszle Progress - https://laurentlb.itch.io/chesszle\n` +
+           `${completedLevels}/${totalLevels} levels completed | ${optimalLevels} Optimal\n` +
+           `Progression:\n${progression}`;
+}
+
 // Call loadProgress when the page loads
 loadProgress();
 

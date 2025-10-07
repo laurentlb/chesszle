@@ -189,6 +189,7 @@
             <div id="perfectScore" class="perfect" title="Perfect score">★</div>
         </div>
         <button id="levelSelectorButton">Levels</button>
+        <div id="shareProgressIcon" title="Share Progress" style="cursor: pointer; font-size: 28px;">↗️</div>
     </div>
     <canvas id="chessBoard"></canvas>
     <p id="display-message"></p>
@@ -219,5 +220,26 @@
     <script src="levels.js"></script>
     <script src="game.js"></script>
     <script data-goatcounter="https://chesszle.goatcounter.com/count" data-goatcounter-settings='{"allow_frame": true}' async src="//gc.zgo.at/count.js"></script>
+    <script>
+        function unsecuredCopyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("Progress copied to clipboard!");
+            } catch (err) {
+                console.error('Unable to copy to clipboard', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        document.getElementById("shareProgressIcon").addEventListener("click", () => {
+            const progressString = generateProgressString();
+            unsecuredCopyToClipboard(progressString);
+        });
+    </script>
 </body>
 </html>
