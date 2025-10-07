@@ -124,7 +124,7 @@
                 position: absolute;
                 top: 4px;
                 left: 4px;
-        }
+            }
 
             .score {
                 height: 100%;
@@ -132,15 +132,15 @@
                 font-size: 2em;
             }
         }
-            .perfect {
-                font-size: 32px;
-                line-height: 32px;
-                color: gold;
-                text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
-                position: absolute;
-                top: 4px;
-                right: 4px;
-            }
+        .perfect {
+            font-size: 32px;
+            line-height: 32px;
+            color: gold;
+            text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+            position: absolute;
+            top: 4px;
+            right: 4px;
+        }
         #header .perfect {
             top: -21px;
             right: -14px;
@@ -185,7 +185,7 @@
 <body>
     <div id="header">
         <div style="position: relative;">
-        <span id="parInfo">-- / 8</span>
+            <span id="parInfo">-- / 8</span>
             <div id="perfectScore" class="perfect" title="Perfect score">★</div>
         </div>
         <button id="levelSelectorButton">Levels</button>
@@ -210,14 +210,14 @@
         <h3>Congratulations!</h3>
         <p>You have completed all the levels.</p>
         <p>
-            To give feedback or create new levels, visit the <a href="https://github.com/laurentlb/chesszle">GitHub repository</a>.
-            More levels might be added in the future.
+            Please give feedback on the game, whether you enjoyed it or not!
+            For the record, the source code can be found at <a href="https://github.com/laurentlb/chesszle">GitHub repository</a>.
         </p>
         <button onclick="toggleModal('congratulationsPopup', false)">Close</button>
     </div>
 
     <script src="levels.js"></script>
     <script src="game.js"></script>
-    <script data-goatcounter="https://chesszle.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+    <script data-goatcounter="https://chesszle.goatcounter.com/count" data-goatcounter-settings='{"allow_frame": true}' async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
